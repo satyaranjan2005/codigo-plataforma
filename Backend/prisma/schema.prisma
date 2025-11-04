@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// A tiny model to test local MySQL connectivity and Prisma Client
+// Student/Team schema provided by user
+model Student {
+  sic_no   String   @id
+  name      String
+  email     String   @unique
+  phone_no  String?
+  password  String
+  role      Role     @default(MEMBER)
+  year      Year
+  teams     TeamMember[]
+  proposals TeamProposal[]       @relation("ProposalProposer")
+  proposalMemberships TeamProposalMember[] @relation("ProposalMember")
+  inboxReceived InboxMessage[]   @relation("InboxRecipient")
+  inboxSent     InboxMessage[]   @relation("InboxSender")
+}
+
+model ProblemStatement {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  team         Team?
+}
+
+model Team {
+  id                Int            @id @default(autoincrement())
+  team_name         String
+  problemStatement  ProblemStatement? @relation(fields: [problem_id], references: [id])
+  problem_id        Int?            @unique
+  members           TeamMember[]
+}
+
+model TeamMember {
+  team_id   Int
+  sic_no   String
+  role      TeamRole
+
+  team      Team     @relation(fields: [team_id], references: [id])
+  student   Student  @relation(fields: [sic_no], references: [sic_no])
+
+  @@id([team_id, sic_no])
+  @@unique([sic_no])
+}
+
+// Team proposal workflow: create a proposal, members approve, then proposal is finalized into a Team
+model TeamProposal {
+  id           Int                    @id @default(autoincrement())
+  team_name    String
+  proposer_sic String
+  status       ProposalStatus         @default(PENDING)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  members      TeamProposalMember[]
+
+  proposer     Student @relation("ProposalProposer", fields: [proposer_sic], references: [sic_no])
+}
+
+model TeamProposalMember {
+  id           Int           @id @default(autoincrement())
+  proposal_id  Int
+  sic_no       String
+  approved     Boolean       @default(false)
+  approvedAt   DateTime?
+
+  proposal     TeamProposal  @relation(fields: [proposal_id], references: [id])
+  student      Student       @relation("ProposalMember", fields: [sic_no], references: [sic_no])
+
+  @@unique([proposal_id, sic_no])
+  @@index([sic_no])
+}
+
+// Inbox message model for sending internal messages/notifications to users
+model InboxMessage {
+  id        Int      @id @default(autoincrement())
+  to_sic    String
+  from_sic  String?
+  subject   String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  recipient Student  @relation("InboxRecipient", fields: [to_sic], references: [sic_no])
+  sender    Student? @relation("InboxSender", fields: [from_sic], references: [sic_no])
+
+  @@index([to_sic])
+}
+
+enum Role {
+  MEMBER
+  ADMIN
+  SUPERADMIN
+}
+
+enum TeamRole {
+  LEADER
+  MEMBER
+}
+
+// Academic year enum (adjust values as needed)
+enum Year {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+  FIFTH
+}
+
+enum ProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELED
+}

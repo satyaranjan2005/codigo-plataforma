@@ -1,0 +1,118 @@
+"use client";
+import React, { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import MembersList from "../../../../components/MembersList";
+import AddMemberModal from "../../../../components/AddMemberModal";
+import api from "@/lib/api";
+
+function MembersPage() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [members, setMembers] = useState(() => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("members") : null;
+      if (raw) return JSON.parse(raw);
+    } catch (e) {
+      // ignore
+    }
+
+    // default sample members (include team, role and sic)
+    return [
+      { id: "1", name: "Alice Johnson", email: "alice@example.com", sic: "SIC100", team: "Alpha", role: "Member" },
+      { id: "2", name: "Bob Smith", email: "bob@example.com", sic: "SIC101", team: "Beta", role: "Admin" },
+      { id: "3", name: "Clara Oswald", email: "clara@example.com", sic: "SIC102", team: "Alpha", role: "Member" },
+    ];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("members", JSON.stringify(members));
+    } catch (e) {}
+  }, [members]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await api.get("/users");
+        const data = res?.data;
+        const list = Array.isArray(data) ? data : Array.isArray(data?.users) ? data.users : [];
+        if (!mounted) return;
+        setMembers(
+          list.map((u) => ({
+            id: u.sic_no || u.id || u.sic || u.email,
+            name: u.name || u.full_name || "",
+            email: u.email || "",
+            role: (u.role || u.roleName || (u.role && u.role.name) || "").toString(),
+            sic: u.sic_no || u.sic || u.id,
+          }))
+        );
+      } catch (err) {
+        console.warn("Failed to load users:", err);
+        if (mounted) setError(err?.message || "Failed to load users");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  function handleAdd(member) {
+    setMembers((s) => [member, ...s]);
+  }
+
+  function handleDelete(id) {
+    if (!confirm("Delete this member?")) return;
+    setMembers((s) => s.filter((m) => m.id !== id));
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Members</h2>
+        <div>
+          <button
+            onClick={() => setModalOpen(true)}
+            aria-label="Add member"
+            title="Add member"
+            className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-600 text-white hover:bg-blue-700"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+  {/* show only admins and superadmins */}
+  <div>
+    {loading ? (
+      <div className="p-6 bg-white rounded-md shadow-sm text-center">Loading…</div>
+    ) : error ? (
+      <div className="p-6 bg-white rounded-md shadow-sm text-center text-rose-600">{error}</div>
+    ) : (
+      (() => {
+        const visible = members.filter((m) => {
+          const r = (m.role || "").toString().toLowerCase();
+          return r === "admin" || r === "superadmin";
+        });
+        return <MembersList members={visible} onDelete={handleDelete} />;
+      })()
+    )}
+  </div>
+
+      <AddMemberModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onAdd={handleAdd}
+      />
+    </div>
+  );
+}
+
+export default MembersPage;
