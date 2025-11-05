@@ -3,14 +3,14 @@ import Footer from '../../components/Footer';
 
 
 function MainLayout({ children }) {
+  // Child layouts must not include <html> or <body> — the root `src/app/layout.jsx`
+  // already provides them. Return a fragment that renders the site chrome.
   return (
-    <html lang="en">
-      <body>
-        <Navbar />
-        {children}
-        <Footer />
-      </body>
-    </html>
+    <>
+      <Navbar />
+      {children}
+      <Footer />
+    </>
   );
 }
 

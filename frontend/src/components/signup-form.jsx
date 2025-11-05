@@ -46,13 +46,25 @@ export function SignupForm({ className, ...props }) {
       if (res?.token) {
         try { localStorage.setItem("authToken", res.token); } catch (e) { /* ignore */ }
         try {
-          const user = res?.user || res?.profile || (res?.data && res.data.user) || { name: name || email.split("@")[0], email };
+          // Merge server response with form data to ensure sic_no, name, email are always present
+          const serverUser = res?.user || res?.profile || (res?.data && res.data.user) || {};
+          const user = {
+            ...serverUser,
+            sic_no: serverUser.sic_no || sic_no,
+            name: serverUser.name || name,
+            email: serverUser.email || email
+          };
           localStorage.setItem("authUser", JSON.stringify(user));
+          // Also store individual fields for easy access
+          localStorage.setItem("sic_no", user.sic_no);
+          localStorage.setItem("name", user.name);
+          localStorage.setItem("email", user.email);
         } catch (e) { /* ignore */ }
         try { window.dispatchEvent(new Event('authChange')); } catch (e) { /* ignore */ }
+        // Use window.location to ensure full page reload with new auth state
+        window.location.href = "/";
+        return;
       }
-  // navigate to home
-  router.push("/")
     } catch (err) {
       console.error(err)
       setError(err?.message || (err?.response?.data?.message) || "Failed to register")
@@ -122,7 +134,8 @@ export function SignupForm({ className, ...props }) {
             </FieldGroup>
           </form>
           <div className="bg-muted relative hidden md:block">
-            <image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop"
               alt="Coding workspace"
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale" />

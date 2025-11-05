@@ -111,6 +111,45 @@ router.get('/search', authenticate, async (req, res, next) => {
   }
 });
 
+// GET /users/:sic_no - get details for a particular user (allowed for MEMBER/ADMIN/SUPERADMIN)
+router.get('/:sic_no', authenticate, async (req, res, next) => {
+  try {
+    const auth = req.authUser || {};
+    if (!auth.role || !['MEMBER', 'ADMIN', 'SUPERADMIN'].includes(String(auth.role).toUpperCase())) {
+      return res.status(403).json({ error: 'Forbidden: insufficient role' });
+    }
+
+    const sic = String(req.params.sic_no || '').trim();
+    if (!sic) return res.status(400).json({ error: 'Missing sic_no parameter' });
+
+    // Basic user info (exclude password)
+    const user = await prisma.student.findUnique({
+      where: { sic_no: sic },
+      select: { sic_no: true, name: true, email: true, phone_no: true, role: true, year: true },
+    });
+    if (!user) return res.status(404).json({ error: 'Student not found' });
+
+    // Find the team membership (if any) and include team details
+    const membership = await prisma.teamMember.findUnique({ where: { sic_no: sic }, include: { team: { include: { problemStatement: true, members: { include: { student: true } } } } } });
+
+    let team = null;
+    if (membership && membership.team) {
+      const t = membership.team;
+      team = {
+        id: t.id,
+        team_name: t.team_name,
+        problemStatement: t.problemStatement ? { id: t.problemStatement.id, title: t.problemStatement.title, description: t.problemStatement.description || null } : null,
+        members: (t.members || []).map((m) => ({ role: m.role, name: m.student?.name || null, sic_no: m.sic_no, phone_no: m.student?.phone_no || null })),
+      };
+    }
+
+    return res.json({ user, team });
+  } catch (err) {
+    console.error('Error fetching user details:', err);
+    return next(err);
+  }
+});
+
 
 // DELETE /users/:sic_no - delete a user (ADMIN/SUPERADMIN or the user themself)
 router.delete('/:sic_no', authenticate, async (req, res, next) => {

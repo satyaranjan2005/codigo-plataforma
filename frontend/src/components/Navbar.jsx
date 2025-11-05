@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Menu, X, Inbox, LogOut } from "lucide-react";
+import { get } from "@/lib/api";
 import clsx from "clsx";
 
 const NAV_LINKS = [
@@ -14,23 +15,9 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    try {
-      if (typeof window === "undefined") return false;
-      return Boolean(localStorage.getItem("authToken"));
-    } catch (e) {
-      return false;
-    }
-  });
-  const [user, setUser] = useState(() => {
-    try {
-      if (typeof window === "undefined") return null;
-      const raw = localStorage.getItem("authUser");
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-      return null;
-    }
-  });
+  // Start with conservative defaults so server and client markup match.
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
   // no dropdown menu - show quick action icons instead
   const router = useRouter();
 
@@ -50,11 +37,65 @@ export default function Navbar() {
         setIsAuthenticated(Boolean(localStorage.getItem("authToken")));
         const raw = localStorage.getItem("authUser");
         setUser(raw ? JSON.parse(raw) : null);
+        // validate freshly from server whenever auth changes
+        validateAuthUser();
       } catch (e) { /* ignore */ }
+    }
+
+    async function validateAuthUser() {
+      try {
+        const raw = localStorage.getItem("authUser");
+        if (!raw) return;
+        let parsed = null;
+        try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+        if (!parsed) return;
+        const id = parsed.sic || parsed.sic_no || parsed.id || parsed.email;
+        if (!id) {
+          // no identifier -> sign out
+          try { localStorage.removeItem("authToken"); localStorage.removeItem("authUser"); } catch (e) {}
+          try { window.dispatchEvent(new Event("authChange")); } catch (e) {}
+          try { router.replace("/"); } catch (e) {}
+          return;
+        }
+        try {
+          const res = await get(`/users/${encodeURIComponent(String(id))}`);
+          const data = res?.data || res;
+          const fresh = data && (Array.isArray(data) ? data[0] : (data.user || data));
+          if (!fresh) {
+            // user not found on server -> logout
+            try { localStorage.removeItem("authToken"); localStorage.removeItem("authUser"); } catch (e) {}
+            try { window.dispatchEvent(new Event("authChange")); } catch (e) {}
+            try { router.replace("/"); } catch (e) {}
+            return;
+          }
+          // update local authUser with fresh data if differs
+          try {
+            const serialized = JSON.stringify(fresh);
+            if (serialized !== raw) {
+              localStorage.setItem("authUser", serialized);
+              try { window.dispatchEvent(new Event("authChange")); } catch (e) {}
+            }
+            setUser(fresh);
+          } catch (e) { /* ignore */ }
+        } catch (err) {
+          // on network / auth error, if 401 clear token
+          if (err?.response?.status === 401) {
+            try { localStorage.removeItem("authToken"); localStorage.removeItem("authUser"); } catch (e) {}
+            try { window.dispatchEvent(new Event("authChange")); } catch (e) {}
+            try { router.replace("/"); } catch (e) {}
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
     }
 
     window.addEventListener("storage", onStorage);
     window.addEventListener("authChange", onAuthChange);
+
+  // Initialize auth state on mount (client-only) to avoid reading localStorage during SSR/hydration.
+  onAuthChange();
+
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("authChange", onAuthChange);
@@ -96,15 +137,22 @@ export default function Navbar() {
               </Link>
 
             <nav className="hidden md:flex items-center space-x-2">
-              {NAV_LINKS.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-100"
-                >
-                  {l.label}
-                </Link>
-              ))}
+              {NAV_LINKS.map((l) => {
+                // only show dashboard link to admin / superadmin
+                if (l.href === '/dashboard') {
+                  const role = (user?.role || user?.roleName || '').toString().toLowerCase();
+                  if (!(role === 'admin' || role === 'superadmin' || role === 'administrator')) return null;
+                }
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    {l.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
 
@@ -164,19 +212,25 @@ export default function Navbar() {
       </div>
 
       {/* mobile panel */}
-          <div className={clsx("md:hidden bg-white border-t border-slate-100", open ? "block" : "hidden")}>
+            <div className={clsx("md:hidden bg-white border-t border-slate-100", open ? "block" : "hidden")}>
         <div className="px-4 pt-4 pb-6 space-y-2">
           <nav className="flex flex-col space-y-1">
-            {NAV_LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-50"
-                onClick={() => setOpen(false)}
-              >
-                {l.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((l) => {
+              if (l.href === '/dashboard') {
+                const role = (user?.role || user?.roleName || '').toString().toLowerCase();
+                if (!(role === 'admin' || role === 'superadmin' || role === 'administrator')) return null;
+              }
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-50"
+                  onClick={() => setOpen(false)}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="pt-2 border-t border-slate-100">

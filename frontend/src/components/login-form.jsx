@@ -31,18 +31,34 @@ export function LoginForm({ className, ...props }) {
       const res = await apiPost("/auth/login", payload)
       if (res?.token) {
         try { localStorage.setItem("authToken", res.token); } catch (e) { /* ignore */ }
-        // persist minimal user info if returned, otherwise derive from email
+        // persist user info ensuring sic_no, name, email are always present
         try {
-          const user = res?.user || res?.profile || (res?.data && res.data.user) || { name: email.split("@")[0], email };
+          const serverUser = res?.user || res?.profile || (res?.data && res.data.user) || {};
+          const user = {
+            ...serverUser,
+            sic_no: serverUser.sic_no || serverUser.sic || "",
+            name: serverUser.name || email.split("@")[0],
+            email: serverUser.email || email
+          };
           localStorage.setItem("authUser", JSON.stringify(user));
+          // Also store individual fields for easy access
+          if (user.sic_no) localStorage.setItem("sic_no", user.sic_no);
+          localStorage.setItem("name", user.name);
+          localStorage.setItem("email", user.email);
         } catch (e) { /* ignore */ }
         try { window.dispatchEvent(new Event('authChange')); } catch (e) { /* ignore */ }
+        // Use window.location to ensure full page reload with new auth state
+        window.location.href = "/";
+        return;
       }
-  // redirect to home
-  router.push("/")
     } catch (err) {
       console.error(err)
-      setError(err?.response?.data?.message || err?.message || "Login failed")
+      // If server returned 401, show a clearer message
+      if (err?.response?.status === 401) {
+        setError("User not found");
+      } else {
+        setError(err?.response?.data?.message || err?.message || "Login failed");
+      }
     } finally {
       setLoading(false)
     }
@@ -83,6 +99,7 @@ export function LoginForm({ className, ...props }) {
             </FieldGroup>
           </form>
           <div className="bg-muted relative hidden md:block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200&auto=format&fit=crop"
               alt="Coding workspace"

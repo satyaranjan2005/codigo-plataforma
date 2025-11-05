@@ -8,6 +8,7 @@ require('dotenv').config();
 const authRouter = require('./routes/Auth');
 const userRouter = require('./routes/User');
 const teamRouter = require('./routes/Team');
+const problemRouter = require('./routes/casestudy');
 
 const prisma = new PrismaClient();
 
@@ -23,6 +24,8 @@ app.use('/auth', authRouter);
 app.use('/users', userRouter);
 // Mount team CRUD/routes (creates, members etc.)
 app.use('/teams', teamRouter);
+// Mount problem statement routes
+app.use('/problems', problemRouter);
 
 // Health check
 app.get('/', (req, res) => {

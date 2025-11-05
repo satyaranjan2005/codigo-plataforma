@@ -63,13 +63,82 @@ router.post('/', authenticate, async (req, res, next) => {
   }
 });
 
+// POST /teams/:id/register - register a problem statement for a team
+// body: { problem_id: number }
+router.post('/:id/register', authenticate, async (req, res, next) => {
+  try {
+    const teamId = Number(req.params.id);
+    const problemId = Number(req.body && (req.body.problem_id ?? req.body.problemId ?? req.body.id));
+    if (!Number.isInteger(teamId)) return res.status(400).json({ error: 'Invalid team id' });
+    if (!Number.isInteger(problemId)) return res.status(400).json({ error: 'Missing or invalid problem_id in body' });
+
+    const auth = req.authUser || {};
+    const requesterRole = String((auth.role || '').toUpperCase());
+
+    // Load team with members
+    const team = await prisma.team.findUnique({ where: { id: teamId }, include: { members: true } });
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    // If the team already has a problem assigned, only ADMIN/SUPERADMIN can change it
+    if (team.problem_id && !['ADMIN', 'SUPERADMIN'].includes(requesterRole)) {
+      return res.status(403).json({ error: 'Team already registered for a problem. Only ADMIN/SUPERADMIN can change it.' });
+    }
+
+    // Check permission: leader of the team or ADMIN/SUPERADMIN
+    const requesterSic = String(auth.sic_no || '');
+    const isLeader = team.members.some((m) => String(m.sic_no) === requesterSic && String(m.role).toUpperCase() === 'LEADER');
+    if (!isLeader && !['ADMIN', 'SUPERADMIN'].includes(requesterRole)) {
+      return res.status(403).json({ error: 'Forbidden: only the team leader or an admin can register the team for a problem' });
+    }
+
+    // Ensure problem exists
+    const problem = await prisma.problemStatement.findUnique({ where: { id: problemId } });
+    if (!problem) return res.status(404).json({ error: 'ProblemStatement not found' });
+
+    // Attempt to assign the problem to the team. The DB has a unique constraint on Team.problem_id,
+    // so if another team already registered for this problem, Prisma will throw a P2002 unique constraint error.
+    try {
+      const updated = await prisma.team.update({ where: { id: teamId }, data: { problem_id: problemId }, include: { members: { include: { student: true } }, problemStatement: true } });
+      return res.json({ message: 'Team registered for problem', team: updated });
+    } catch (err) {
+      // Prisma unique constraint for problem_id
+      if (err && err.code === 'P2002') {
+        return res.status(409).json({ error: 'ProblemStatement already registered by another team' });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error registering team for problem:', err);
+    return next(err);
+  }
+});
+
 // GET /teams - list teams (with optional pagination)
 router.get('/', async (req, res, next) => {
   try {
     const limit = Math.min(parseInt(req.query.limit || '100', 10) || 100, 1000);
     const offset = Math.max(parseInt(req.query.offset || '0', 10) || 0, 0);
-    const teams = await prisma.team.findMany({ skip: offset, take: limit, include: { members: { include: { student: true } }, problemStatement: true } });
+    const teamsRaw = await prisma.team.findMany({ skip: offset, take: limit, include: { members: { include: { student: true } }, problemStatement: true } });
     const count = await prisma.team.count();
+
+    const teams = teamsRaw.map((team) => ({
+      id: team.id,
+      team_name: team.team_name,
+      problemStatement: team.problemStatement
+        ? {
+            id: team.problemStatement.id,
+            title: team.problemStatement.title,
+            description: team.problemStatement.description || null,
+          }
+        : null,
+      members: (team.members || []).map((m) => ({
+        role: m.role,
+        name: m.student?.name || null,
+        sic_no: m.sic_no,
+        phone_no: m.student?.phone_no || null,
+      })),
+    }));
+
     return res.json({ count, teams });
   } catch (err) {
     console.error(err);
@@ -131,13 +200,80 @@ router.get('/eligible-members/search', async (req, res, next) => {
   }
 });
 
+// GET /teams/member/:sic_no - get the team details for a student by their sic_no
+// Note: `sic_no` is unique in TeamMember, so this returns the single team the student belongs to
+router.get('/member/:sic_no', async (req, res, next) => {
+  try {
+    const sic_no = String(req.params.sic_no || '').trim();
+    if (!sic_no) return res.status(400).json({ error: 'Missing sic_no parameter' });
+
+    // Find the teamMember by sic_no and include the team with members and problemStatement
+    const membership = await prisma.teamMember.findUnique({ where: { sic_no }, include: { team: { include: { members: { include: { student: true } }, problemStatement: true } } } });
+
+    if (!membership || !membership.team) return res.status(404).json({ error: 'Student is not a member of any team' });
+
+    const team = membership.team;
+
+    const members = (team.members || []).map((m) => ({
+      role: m.role,
+      name: m.student?.name || null,
+      sic_no: m.sic_no,
+      phone_no: m.student?.phone_no || null,
+    }));
+
+    const problemStatement = team.problemStatement
+      ? {
+          id: team.problemStatement.id,
+          title: team.problemStatement.title,
+          description: team.problemStatement.description || null,
+        }
+      : null;
+
+    return res.json({
+      id: team.id,
+      team_name: team.team_name,
+      problemStatement,
+      members,
+    });
+  } catch (err) {
+    console.error('Error fetching team by member sic_no:', err);
+    return next(err);
+  }
+});
+
 // GET /teams/:id - get a single team with members
 router.get('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const team = await prisma.team.findUnique({ where: { id }, include: { members: { include: { student: true } }, problemStatement: true } });
+    const team = await prisma.team.findUnique({
+      where: { id },
+      include: { members: { include: { student: true } }, problemStatement: true },
+    });
+
     if (!team) return res.status(404).json({ error: 'Team not found' });
-    return res.json({ team });
+
+    // Map members to the requested shape: role, name, sic_no, phone_no
+    const members = (team.members || []).map((m) => ({
+      role: m.role,
+      name: m.student?.name || null,
+      sic_no: m.sic_no,
+      phone_no: m.student?.phone_no || null,
+    }));
+
+    const problemStatement = team.problemStatement
+      ? {
+          id: team.problemStatement.id,
+          title: team.problemStatement.title,
+          description: team.problemStatement.description || null,
+        }
+      : null;
+
+    return res.json({
+      id: team.id,
+      team_name: team.team_name,
+      problemStatement,
+      members,
+    });
   } catch (err) {
     console.error(err);
     return next(err);

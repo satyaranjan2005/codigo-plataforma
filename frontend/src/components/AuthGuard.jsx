@@ -4,15 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function AuthGuard({ children, redirectTo = "/" }) {
-  const [checked, setChecked] = useState(() => {
-    try {
-      if (typeof window === "undefined") return false;
-      const token = localStorage.getItem("authToken");
-      return !token;
-    } catch (e) {
-      return true;
-    }
-  });
+  const [checked, setChecked] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -21,9 +13,13 @@ export default function AuthGuard({ children, redirectTo = "/" }) {
       if (token) {
         // already authenticated -> redirect away from auth pages
         router.push(redirectTo);
+      } else {
+        // No token, show the auth page
+        setTimeout(() => setChecked(true), 0);
       }
     } catch (e) {
-      // noop
+      // On error, show the auth page
+      setTimeout(() => setChecked(true), 0);
     }
   }, [router, redirectTo]);
 

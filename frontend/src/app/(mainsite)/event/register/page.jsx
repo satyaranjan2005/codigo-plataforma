@@ -43,16 +43,35 @@ export default function RegisterPage() {
         if (!mounted) return;
         const data = res?.data;
         const list = Array.isArray(data) ? data : Array.isArray(data?.users) ? data.users : [];
+        // Build a set of leader identifiers to exclude (current auth user and any saved team leader)
+        const leaderIds = new Set();
+        try {
+          const rawAuth = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
+          const parsedAuth = rawAuth ? JSON.parse(rawAuth) : null;
+          if (parsedAuth) {
+            const aid = parsedAuth.sic || parsedAuth.sic_no || parsedAuth.id || parsedAuth.email;
+            if (aid) leaderIds.add(String(aid));
+          }
+        } catch (e) { /* ignore */ }
+        try {
+          const rawLast = typeof window !== 'undefined' ? localStorage.getItem('lastSavedTeam') : null;
+          const last = rawLast ? JSON.parse(rawLast) : null;
+          const leaderCandidate = last?.server?.leader || last?.server?.leader_id || last?.server?.team_leader || last?.server?.team_leader_id || last?.leader;
+          if (leaderCandidate) leaderIds.add(String(leaderCandidate));
+        } catch (e) { /* ignore */ }
+
         const mapped = list.map((u) => ({
           id: u.sic_no || u.id || u.email || `${Date.now()}_${Math.random()}`,
           name: u.name || u.full_name || "",
           email: u.email || "",
           role: (u.role || u.roleName || (u.role && u.role.name) || "").toString(),
         }));
-        // exclude ADMIN / SUPERADMIN
+        // exclude ADMIN / SUPERADMIN and any leader ids
         const filtered = mapped.filter((u) => {
           const r = (u.role || "").toString().toLowerCase();
-          return !(r === "admin" || r === "superadmin");
+          if (r === "admin" || r === "superadmin") return false;
+          if (leaderIds.has(String(u.id)) || leaderIds.has(String(u.email))) return false;
+          return true;
         });
         setAllUsers(filtered);
       } catch (err) {
@@ -69,6 +88,52 @@ export default function RegisterPage() {
   }, []);
 
   // No localStorage usage in this component by design
+
+  // Block access if user is already registered for event (check local lastSavedTeam or backend)
+  useEffect(() => {
+    let mounted = true;
+    async function checkAlreadyRegistered() {
+      try {
+        if (typeof window === "undefined") return;
+        const rawAuth = localStorage.getItem("authUser");
+        const auth = rawAuth ? JSON.parse(rawAuth) : null;
+        const sic = auth && (auth.sic || auth.sic_no || auth.sicNo || auth.id || auth.email);
+        // 1) quick local check
+        try {
+          const rawLast = localStorage.getItem("lastSavedTeam");
+          if (rawLast && sic) {
+            const last = JSON.parse(rawLast);
+            const members = Array.isArray(last?.members) ? last.members : (Array.isArray(last?.server?.members) ? last.server.members : []);
+            const matches = Array.isArray(members) && members.some((m) => String(m) === String(sic) || String(m) === String(auth.id) || String(m) === String(auth.email));
+            if (matches) {
+              try { router.replace('/event'); } catch (e) {}
+              return;
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        // 2) backend check
+        if (!sic) return;
+        try {
+          const res = await api.get(`/teams/member/${encodeURIComponent(String(sic))}`);
+          const data = res?.data || res;
+          const team = Array.isArray(data) ? data[0] : (data?.team || data?.teams?.[0] || data);
+          if (team && mounted) {
+            try { router.replace('/event'); } catch (e) {}
+            return;
+          }
+        } catch (err) {
+          // no-op; allow page if backend lookup fails
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    checkAlreadyRegistered();
+    return () => { mounted = false; };
+  }, []);
 
   // (no-op) leaderId previously synced here — leader is derived below instead of stored
   const [showToast, setShowToast] = useState(false);
@@ -112,16 +177,35 @@ export default function RegisterPage() {
         if (!mounted) return;
         const data = res?.data;
         const list = Array.isArray(data) ? data : Array.isArray(data?.users) ? data.users : [];
+        // Build leaderIds same as loadUsers
+        const leaderIds = new Set();
+        try {
+          const rawAuth = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
+          const parsedAuth = rawAuth ? JSON.parse(rawAuth) : null;
+          if (parsedAuth) {
+            const aid = parsedAuth.sic || parsedAuth.sic_no || parsedAuth.id || parsedAuth.email;
+            if (aid) leaderIds.add(String(aid));
+          }
+        } catch (e) {}
+        try {
+          const rawLast = typeof window !== 'undefined' ? localStorage.getItem('lastSavedTeam') : null;
+          const last = rawLast ? JSON.parse(rawLast) : null;
+          const leaderCandidate = last?.server?.leader || last?.server?.leader_id || last?.server?.team_leader || last?.server?.team_leader_id || last?.leader;
+          if (leaderCandidate) leaderIds.add(String(leaderCandidate));
+        } catch (e) {}
+
         const mapped = list.map((u) => ({
           id: u.sic_no || u.id || u.email || `${Date.now()}_${Math.random()}`,
           name: u.name || u.full_name || "",
           email: u.email || "",
           role: (u.role || u.roleName || (u.role && u.role.name) || "").toString(),
         }));
-        // exclude ADMIN / SUPERADMIN
+        // exclude ADMIN / SUPERADMIN and leader ids
         const filtered = mapped.filter((u) => {
           const r = (u.role || "").toString().toLowerCase();
-          return !(r === "admin" || r === "superadmin");
+          if (r === "admin" || r === "superadmin") return false;
+          if (leaderIds.has(String(u.id)) || leaderIds.has(String(u.email))) return false;
+          return true;
         });
         setSearchResults(filtered);
       } catch (err) {
@@ -165,16 +249,43 @@ export default function RegisterPage() {
     if (!name) {
       // non-blocking feedback via console; the UI could be improved to show inline errors
       console.warn("Please enter a team name.");
+      setToastMsg("Please enter a team name.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
       return;
     }
-    if (members.length === 0) {
-      console.warn("Please add at least one member.");
+    if (members.length !== 2) {
+      console.warn("You must add exactly 2 members to your team.");
+      setToastMsg("You must add exactly 2 members to your team.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
       return;
     }
 
     try {
-      // Send team to backend
-      await api.post("/teams", { team_name: name, members });
+      // Send team to backend and capture server response when available
+      const resp = await api.post("/teams", { team_name: name, members });
+      const serverData = resp?.data || resp;
+
+      // Build lastSavedTeam object to persist locally for quick lookup on /event
+      const membersInfo = members.map((m) => {
+        const u = allUsers.find((x) => x.id === m) || results.find((x) => x.id === m);
+        return u || { id: m };
+      });
+      const lastSavedTeam = {
+        server: serverData,
+        team_name: name,
+        members: members.slice(),
+        membersInfo,
+        savedAt: new Date().toISOString(),
+      };
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("lastSavedTeam", JSON.stringify(lastSavedTeam));
+        }
+      } catch (e) {
+        console.warn("Failed to persist lastSavedTeam to localStorage:", e);
+      }
 
       // refresh teams list
       try {
@@ -234,7 +345,12 @@ export default function RegisterPage() {
     <main className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
         <h1 className="text-2xl font-semibold">Event Registration</h1>
-        <p className="mt-2 text-sm text-slate-600">Create a team for the event: add a team name, search for users and add them as members.</p>
+        <p className="mt-2 text-sm text-slate-600">Create a team for the event: add a team name and select exactly 2 members.</p>
+        <div className="mt-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800">
+            <strong>Team Requirements:</strong> You must add exactly 2 members to create a valid team.
+          </p>
+        </div>
 
         <form onSubmit={handleSaveTeam} className="mt-6 space-y-6">
           <div>
@@ -248,9 +364,11 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Selected members</label>
+            <label className="block text-sm font-medium text-slate-700">
+              Selected members ({members.length}/2)
+            </label>
             <div className="mt-2 space-y-2">
-              {members.length === 0 && <div className="text-sm text-slate-500">No members yet.</div>}
+              {members.length === 0 && <div className="text-sm text-slate-500">No members yet. Add exactly 2 members.</div>}
               {members.map((mId) => {
                 const user = allUsers.find((u) => u.id === mId) || results.find((u) => u.id === mId) || { id: mId, name: mId, email: "" };
                 return (
@@ -290,7 +408,7 @@ export default function RegisterPage() {
                       type="button"
                       onClick={() => addMember(u)}
                       className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm disabled:opacity-50"
-                      disabled={members.includes(u.id) || members.length >= (leaderPresent ? 3 : 4)}
+                      disabled={members.includes(u.id) || members.length >= 2}
                     >
                       Add
                     </button>

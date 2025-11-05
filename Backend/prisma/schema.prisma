@@ -30,7 +30,6 @@ model Student {
 model ProblemStatement {
   id           Int      @id @default(autoincrement())
   title        String
-  description  String?
   team         Team?
 }
 
