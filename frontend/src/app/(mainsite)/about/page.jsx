@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 
 
@@ -188,6 +189,8 @@
 
 
 
+=======
+>>>>>>> 2cb26cba338264e12815f51f5f05daab6b866326
 "use client";
 
 import React from "react";
@@ -391,4 +394,8 @@ export default function AboutUsPage() {
       </motion.section>
     </div>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 2cb26cba338264e12815f51f5f05daab6b866326

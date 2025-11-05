@@ -68,9 +68,21 @@ function MembersPage() {
     setMembers((s) => [member, ...s]);
   }
 
-  function handleDelete(id) {
+  async function handleDelete(id) {
     if (!confirm("Delete this member?")) return;
-    setMembers((s) => s.filter((m) => m.id !== id));
+    // find member to get sic number
+    const member = members.find((m) => m.id === id) || {};
+    const sic = member.sic || member.id || id;
+    try {
+      // call demote endpoint for the member
+      await api.post(`/users/${encodeURIComponent(sic)}/demote`);
+      // remove from UI on success
+      setMembers((s) => s.filter((m) => m.id !== id));
+    } catch (err) {
+      console.error("Failed to demote member:", err);
+      // basic user feedback
+      alert("Failed to demote member. Please try again.");
+    }
   }
 
   return (

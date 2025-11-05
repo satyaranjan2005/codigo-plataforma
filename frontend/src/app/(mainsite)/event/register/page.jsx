@@ -5,74 +5,23 @@ import api from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [teamName, setTeamName] = useState(() => {
-    try {
-      if (typeof window === "undefined") return "";
-      const rawPending = localStorage.getItem("pendingRegistration");
-      if (rawPending) {
-        const p = JSON.parse(rawPending);
-        const first = (p.name || "").split(" ")[0] || "Team";
-        return `${first}'s Team`;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return "";
-  });
+  // Simplified: start with an empty team name (no localStorage)
+  const [teamName, setTeamName] = useState("");
   const [query, setQuery] = useState("");
-  const [members, setMembers] = useState(() => {
-    try {
-      if (typeof window === "undefined") return [];
-      const rawPending = localStorage.getItem("pendingRegistration");
-      if (rawPending) {
-        const p = JSON.parse(rawPending);
-        if (p && (p.name || p.email)) {
-          const uid = p.email ? `u_${p.email.replace(/[^a-zA-Z0-9@._-]/g, "")}` : `u_pending_${Date.now()}`;
-          return [{ id: uid, name: p.name || "Pending User", email: p.email || "" }];
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return [];
-  });
+  // Simplified: always start with an empty members array
+  const [members, setMembers] = useState([]);
 
   // NOTE: leader detection is derived from the first selected member (ids from pendingRegistration
   // use the `u_` prefix). We avoid storing leaderId separately to reduce setState-in-effect issues.
 
-  const [allUsers, setAllUsers] = useState(() => {
-    try {
-      const users = [];
-      if (typeof window !== "undefined") {
-        const raw = localStorage.getItem("registrations");
-        const regs = raw ? JSON.parse(raw) : null;
-        if (Array.isArray(regs) && regs.length > 0) {
-          regs.forEach((r) => users.push({ id: r.id, name: r.name || "Unknown", email: r.email || "" }));
-        }
-        // include pendingRegistration at the front if present
-        const rawPending = localStorage.getItem("pendingRegistration");
-        if (rawPending) {
-          const p = JSON.parse(rawPending);
-          if (p && (p.name || p.email)) {
-            const uid = p.email ? `u_${p.email.replace(/[^a-zA-Z0-9@._-]/g, "")}` : `u_pending_${Date.now()}`;
-            // only add if not present in regs
-            const exists = users.find((u) => (u.email && p.email && u.email === p.email));
-            if (!exists) users.unshift({ id: uid, name: p.name || "Pending User", email: p.email || "" });
-          }
-        }
-      }
-      if (users.length > 0) return users;
-    } catch (e) {
-      console.error(e);
-    }
-    return [
-      { id: "u1", name: "Alice Johnson", email: "alice@example.com" },
-      { id: "u2", name: "Bob Smith", email: "bob@example.com" },
-      { id: "u3", name: "Carlos Reyes", email: "carlos@example.com" },
-      { id: "u4", name: "Dana Lee", email: "dana@example.com" },
-      { id: "u5", name: "Eve Park", email: "eve@example.com" },
-    ];
-  });
+  // Simplified: start with a small static list; real data will be loaded from the API
+  const [allUsers, setAllUsers] = useState([
+    { id: "u1", name: "Alice Johnson", email: "alice@example.com" },
+    { id: "u2", name: "Bob Smith", email: "bob@example.com" },
+    { id: "u3", name: "Carlos Reyes", email: "carlos@example.com" },
+    { id: "u4", name: "Dana Lee", email: "dana@example.com" },
+    { id: "u5", name: "Eve Park", email: "eve@example.com" },
+  ]);
 
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [usersError, setUsersError] = useState(null);
@@ -105,16 +54,7 @@ export default function RegisterPage() {
           const r = (u.role || "").toString().toLowerCase();
           return !(r === "admin" || r === "superadmin");
         });
-        setAllUsers((prev) => {
-          // preserve pendingRegistration at front if it exists in prev
-          const pending = prev.length > 0 && String(prev[0].id).startsWith("u_") ? prev[0] : null;
-          if (pending) {
-            // ensure pending is first and not duplicated
-            const withoutPending = filtered.filter((f) => f.email !== pending.email);
-            return [pending, ...withoutPending];
-          }
-          return filtered;
-        });
+        setAllUsers(filtered);
       } catch (err) {
         console.warn("Failed to load users:", err);
         if (mounted) setUsersError(err?.message || "Failed to load users");
@@ -128,19 +68,15 @@ export default function RegisterPage() {
     };
   }, []);
 
-  // remove the consumed pendingRegistration so it doesn't linger in storage
-  useEffect(() => {
-    try {
-      if (typeof window === "undefined") return;
-      localStorage.removeItem("pendingRegistration");
-    } catch (e) {
-      /* ignore */
-    }
-  }, []);
+  // No localStorage usage in this component by design
 
   // (no-op) leaderId previously synced here — leader is derived below instead of stored
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+  // teams list fetched from backend
+  const [teams, setTeams] = useState([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [teamsError, setTeamsError] = useState(null);
 
   // Note: pendingRegistration (if present) is applied during initial state setup above to avoid
   // calling setState synchronously inside an effect which can cause cascading renders.
@@ -203,24 +139,27 @@ export default function RegisterPage() {
   }, [query]);
 
   // leaderPresent: true when the first selected member looks like the pending registrant
-  const leaderPresent = Boolean(members && members.length > 0 && typeof members[0].id === "string" && members[0].id.startsWith("u_"));
+  // members now stores only member identifiers (sic/id strings)
+  const leaderPresent = Boolean(members && members.length > 0 && typeof members[0] === "string" && members[0].startsWith("u_"));
+  // maximum members a user can add
+  const MAX_MEMBERS = 2;
 
   function addMember(user) {
     if (!user) return;
+    // store only the member identifier (prefer sic/id)
+    const memberId = user.id;
     setMembers((prev) => {
-      if (prev.find((m) => m.id === user.id)) return prev;
-      // if a leader exists, they can add only 2 team members in addition to themselves
-      const maxAllowed = leaderPresent ? 3 : 4;
-      if (prev.length >= maxAllowed) return prev;
-      return [...prev, user];
+      if (prev.includes(memberId)) return prev;
+      if (prev.length >= MAX_MEMBERS) return prev;
+      return [...prev, memberId];
     });
   }
 
   function removeMember(id) {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
+    setMembers((prev) => prev.filter((m) => m !== id));
   }
 
-  function handleSaveTeam(e) {
+  async function handleSaveTeam(e) {
     e.preventDefault();
     const name = (teamName || "").trim();
     if (!name) {
@@ -234,11 +173,19 @@ export default function RegisterPage() {
     }
 
     try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem("teams") : null;
-      const arr = raw ? JSON.parse(raw) : [];
-      const team = { id: `t${Date.now()}`, teamName: name, members };
-      const next = [team, ...(Array.isArray(arr) ? arr : [])];
-      localStorage.setItem("teams", JSON.stringify(next));
+      // Send team to backend
+      await api.post("/teams", { team_name: name, members });
+
+      // refresh teams list
+      try {
+        const res2 = await api.get("/teams");
+        const data2 = res2?.data;
+        const list2 = Array.isArray(data2) ? data2 : Array.isArray(data2?.teams) ? data2.teams : [];
+        setTeams(list2);
+      } catch (err) {
+        console.warn("Failed to refresh teams after save:", err);
+      }
+
       // show success toast then redirect
       setToastMsg("Team saved successfully");
       setShowToast(true);
@@ -247,9 +194,41 @@ export default function RegisterPage() {
         router.push("/event");
       }, 1200);
     } catch (e) {
-      console.error(e, "Failed to save team");
+      console.error(e, "Failed to save team via API");
+      // Show an error toast and keep the user on the page
+      setToastMsg("Failed to save team. Please try again.");
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
     }
   }
+
+  // load teams for display
+  useEffect(() => {
+    let mounted = true;
+    async function loadTeams() {
+      setTeamsLoading(true);
+      setTeamsError(null);
+      try {
+        const res = await api.get("/teams");
+        if (!mounted) return;
+        const data = res?.data;
+        // normalize teams: expect array of { team_name? name? members? }
+        const list = Array.isArray(data) ? data : Array.isArray(data?.teams) ? data.teams : [];
+        setTeams(list);
+      } catch (err) {
+        console.warn("Failed to load teams:", err);
+        if (mounted) setTeamsError(err?.message || "Failed to load teams");
+      } finally {
+        if (mounted) setTeamsLoading(false);
+      }
+    }
+    loadTeams();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
@@ -272,17 +251,20 @@ export default function RegisterPage() {
             <label className="block text-sm font-medium text-slate-700">Selected members</label>
             <div className="mt-2 space-y-2">
               {members.length === 0 && <div className="text-sm text-slate-500">No members yet.</div>}
-              {members.map((m) => (
-                <div key={m.id} className="flex items-center justify-between border rounded-md px-3 py-2">
-                  <div>
-                    <div className="font-medium">{m.name}</div>
-                    <div className="text-xs text-slate-500">{m.email}</div>
+              {members.map((mId) => {
+                const user = allUsers.find((u) => u.id === mId) || results.find((u) => u.id === mId) || { id: mId, name: mId, email: "" };
+                return (
+                  <div key={mId} className="flex items-center justify-between border rounded-md px-3 py-2">
+                    <div>
+                      <div className="font-medium">{user.name}</div>
+                      <div className="text-xs text-slate-500">{user.email}</div>
+                    </div>
+                    <div>
+                      <button type="button" onClick={() => removeMember(mId)} className="px-3 py-1 border rounded-md text-sm">Remove</button>
+                    </div>
                   </div>
-                  <div>
-                    <button type="button" onClick={() => removeMember(m.id)} className="px-3 py-1 border rounded-md text-sm">Remove</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -308,7 +290,7 @@ export default function RegisterPage() {
                       type="button"
                       onClick={() => addMember(u)}
                       className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm disabled:opacity-50"
-                      disabled={members.find((m) => m.id === u.id) || members.length >= (leaderPresent ? 3 : 4)}
+                      disabled={members.includes(u.id) || members.length >= (leaderPresent ? 3 : 4)}
                     >
                       Add
                     </button>
@@ -323,6 +305,47 @@ export default function RegisterPage() {
             <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md">Save Team</button>
           </div>
         </form>
+        {/* Teams list */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold">Teams</h2>
+          {teamsLoading ? (
+            <div className="mt-3 p-4 bg-white rounded-md shadow-sm">Loading teams…</div>
+          ) : teamsError ? (
+            <div className="mt-3 p-4 bg-white rounded-md shadow-sm text-rose-600">{teamsError}</div>
+          ) : teams.length === 0 ? (
+            <div className="mt-3 p-4 bg-white rounded-md shadow-sm text-slate-500">No teams yet.</div>
+          ) : (
+            <div className="mt-3 space-y-3">
+              {teams.map((t, idx) => {
+                // normalize fields
+                const name = t.team_name || t.name || t.teamName || `Team ${idx + 1}`;
+                const tMembers = Array.isArray(t.members) ? t.members : Array.isArray(t.users) ? t.users : [];
+                return (
+                  <div key={name + idx} className="bg-white p-4 rounded-md shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">{name}</div>
+                      <div className="text-sm text-slate-500">{tMembers.length} member{tMembers.length !== 1 ? "s" : ""}</div>
+                    </div>
+                    <div className="mt-2 grid grid-cols-1 gap-2">
+                      {tMembers.map((m) => {
+                        // member might be an id string or an object
+                        const user = typeof m === "string" ? (allUsers.find((u) => u.id === m) || { id: m, name: m, email: "" }) : m;
+                        return (
+                          <div key={typeof m === "string" ? m : (m.id || JSON.stringify(m))} className="flex items-center justify-between border rounded-md px-3 py-2">
+                            <div>
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-xs text-slate-500">{user.email}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
         {/* Toast */}
         {showToast && (
           <div className="fixed right-4 bottom-6 z-50">

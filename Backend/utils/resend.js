@@ -132,4 +132,4 @@ async function sendTeamInvite(toEmail, name, proposalId, approverSic) {
   }
 }
 
-module.exports = { sendWelcomeEmail, sendTeamInvite };
+module.exports = { sendWelcomeEmail };
