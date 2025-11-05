@@ -9,7 +9,6 @@ import clsx from "clsx";
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  { href: "/pricing", label: "Pricing" },
   { href: "/dashboard", label: "Dashboard" },
 ];
 
@@ -82,10 +81,20 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center gap-2">
+            {/* <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold">CP</div>
               <span className="font-semibold text-slate-900">Codigo</span>
-            </Link>
+            </Link> */}
+
+                <Link href="/" className="flex items-center gap-2">
+                <img 
+                  src="/logo.svg" 
+                  alt="Codigo Logo" 
+                  className="w-8 h-8 object-contain"
+                />
+                <span className="font-semibold text-slate-900">Codigo Platforma</span>
+              </Link>
+
             <nav className="hidden md:flex items-center space-x-2">
               {NAV_LINKS.map((l) => (
                 <Link
@@ -104,6 +113,14 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-2 overflow-visible">
               {!isAuthenticated ? (
                 <>
+
+                <Link
+  href="/about"
+  className="text-sm px-3 py-2 rounded-md hover:bg-slate-100 text-slate-700"
+>
+  About
+</Link>
+
                   <Link
                     href="/login"
                     className="text-sm px-3 py-2 rounded-md hover:bg-slate-100 text-slate-700"

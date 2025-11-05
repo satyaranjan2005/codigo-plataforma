@@ -10,13 +10,13 @@ const demoEvent = {
   logo: "https://images.unsplash.com/photo-1520975914723-8d3b2f3d9f1f?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.0.3&s=4b2a6d7f8e9a0b1c2d3e4f5a6b7c8d9e",
   about:
     "Design Mania 2024 presented by Codigo Plataforma is an individual UI/UX design competition where participants will demonstrate their research, creativity, and design skills. Participants will receive a case study, and they will have 24 hours to conduct research. Once research is submitted, participants will then design according to the case study.",
-  importantDate: "2025-11-15",
-  organiserContact: "Organising Team\nEmail: events@campustech.example\nPhone: +1 (555) 123-4567",
+  importantDate: "2025-11-13",
+  organiserContact: "Codigo Platforma\nEmail: siliconcodingclub@gmail.com\nPhone: +91 6370 577 859",
   location: "Seminar Hall and Lab 3 & 4",
     stages: [
     { id: 1, title: "Registration", start: "Nov 8", end: "Nov 11", time: "All day", description: "Open registrations for teams containing 3 members." },
-    { id: 2, title: "Case Study Release", start: "Nov 14", end: "Nov 15", time: "10:00 AM (Release)", description: "Participants will receive the case study and have 24 hours to conduct research and submit their Research." },
-    { id: 3, title: "Finals & Demos", start: "Nov 15", end: "Nov 15", time: "3:00 PM - 6:00 PM", description: "Final presentations, demos and judging taking place on-site." },
+    { id: 2, title: "Case Study Release", start: "Nov 12", end: "Nov 13", time: "12:00 AM (Release)", description: "Participants will receive the case study and have 24 hours to conduct research and submit their Research." },
+    { id: 3, title: "Finals & Demos", start: "Nov 13", end: "Nov 13", time: "9:00 AM - 4:30 PM", description: "Final presentations, demos and judging taking place on-site." },
   ],
   prizes: [
     { id: 1, title: "1st Prize", amount: "1,500", description: "Grand prize for the winning team." },
@@ -154,15 +154,13 @@ export default function Page() {
             <article className="bg-white border rounded-lg p-6 shadow-sm">
               <h3 className="text-lg font-semibold">Eligibility</h3>
               <p className="mt-3 text-slate-700 leading-relaxed">
-                This event is open to undergraduate and graduate students from accredited
-                institutions. Individual participants and teams (up to 4 members) are welcome.
+                This event is open to all the students of Silicon Institute of Technology, Sambalpur to showcase their UI/UX skills. Teams (up to maximum 3 members) are welcome.
                 Participants must register before {demoEvent.importantDate} and agree to the
                 event code of conduct.
               </p>
               <ul className="mt-4 list-disc list-inside text-slate-600 space-y-1">
-                <li>Students (undergraduate and postgraduate) and recent graduates (within 1 year).</li>
-                <li>Interdisciplinary teams encouraged — engineering, design, business, etc.</li>
-                <li>Mentors, staff, and judges are not eligible to compete.</li>
+                <li>Inter-branch teams are encouraged. </li>
+                <li>Inter-batch teams are encouraged</li>
               </ul>
             </article>
 
@@ -187,7 +185,7 @@ export default function Page() {
                       {s.id === 2 && (
                         <div className="mt-3">
                           <a
-                            href="/event-case-study.pdf"
+                            href="/DesignMania-CaseStudy.pdf"
                             download
                             className="inline-block px-3 py-2 bg-amber-500 text-white rounded-md text-sm hover:bg-amber-600 transition"
                           >
@@ -262,11 +260,21 @@ export default function Page() {
             <h3 className="text-lg font-semibold">Event Rules &amp; Guidelines</h3>
       
             <div className="mt-3 text-sm text-slate-700 space-y-2">
-              <p>• Each team may have up to 4 members.</p>
-              <p>• Participants must submit research within 24 hours of the case study release.</p>
-              <p>• Follow the code of conduct and respect intellectual property rules.</p>
-              <p>• Late submissions will not be considered.</p>
-            </div>
+  <p>• Each team may have up to 3 members.</p>
+  <p>• Participants must submit research within 24 hours of the case study release.</p>
+  <p>• Follow the code of conduct and respect intellectual property rules.</p>
+  <p>• Late submissions will not be considered.</p>
+  <p>• All designs must be original. Plagiarism or copying from existing designs will lead to disqualification.</p>
+  <p>• Participants are allowed to use any design tool of their choice (Figma, Adobe XD, Sketch, etc.).</p>
+  <p>• The final submission must include both the design screens and a short justification of the design decisions.</p>
+  <p>• The judging criteria will include creativity, usability, clarity, and adherence to the given problem statement.</p>
+  <p>• The decision of the judging panel will be final and binding.</p>
+  <p>• Participants must maintain professionalism and respectful communication throughout the competition.</p>
+  <p>• Any form of misconduct, unfair advantage, or use of AI-generated full UI without adaptation may result in penalties.</p>
+  <p>• Ensure your designs are responsive and consider multiple screen sizes where applicable.</p>
+  <p>• After you agree with the terms and conditions you cannot back-out from the competition.</p>
+</div>
+
             <div className="mt-4 flex justify-end gap-3">
               <button onClick={() => setShowRules(false)} className="px-3 py-2 rounded-md border">Cancel</button>
               <button

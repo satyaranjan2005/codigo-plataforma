@@ -1,54 +1,23 @@
+
 function Events() {
   const events = [
     {
-      date: "15",
+      date: "13",
       month: "NOV",
-      year: "2024",
-      title: "Web Development Workshop",
-      description: "Learn modern web technologies with hands-on projects",
-      category: "Workshop",
-      attendees: 45,
-      time: "6:00 PM - 8:00 PM",
-      location: "Lab 301"
-    },
-    {
-      date: "22",
-      month: "NOV",
-      year: "2024",
-      title: "Hackathon 2024",
-      description: "24-hour coding challenge with exciting prizes",
+      year: "2025",
+      title: "Design Mania",
+      description: "Design Mania 2024 presented by Codigo Plataforma is an individual UI/UX design competition where participants will demonstrate their research, creativity, and design skills. Participants will receive a case study, and they will have 24 hours to conduct research. Once research is submitted, participants will then design according to the case study.",
       category: "Competition",
-      attendees: 120,
-      time: "9:00 AM - Next Day",
-      location: "Main Auditorium"
-    },
-    {
-      date: "30",
-      month: "NOV",
-      year: "2024",
-      title: "AI & Machine Learning Talk",
-      description: "Guest speaker from industry sharing insights",
-      category: "Seminar",
-      attendees: 80,
-      time: "5:00 PM - 7:00 PM",
-      location: "Seminar Hall"
-    },
-    {
-      date: "08",
-      month: "DEC",
-      year: "2024",
-      title: "Project Showcase",
-      description: "Present your innovative projects to the community",
-      category: "Exhibition",
-      attendees: 60,
-      time: "3:00 PM - 6:00 PM",
-      location: "Exhibition Center"
+      attendees: 45,
+      time: "9:00 AM - 4:00 PM",
+      location: "Seminar Hall and Lab 3,4"
     }
   ];
 
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-6 md:px-8">
+        
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
@@ -59,16 +28,18 @@ function Events() {
           </p>
         </div>
 
-        {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        {/* Events Grid Centered */}
+        <div className="grid grid-cols-1 justify-center place-items-center mb-12">
           {events.map((event, index) => (
             <div
               key={index}
-              className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden hover:border-orange-500 hover:shadow-xl transition-all duration-300 group cursor-pointer"
+              className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden hover:border-orange-500 hover:shadow-xl transition-all duration-300 group cursor-pointer w-full md:max-w-2xl"
             >
               <div className="p-6">
+                
                 {/* Top Section */}
                 <div className="flex items-start gap-4 mb-4">
+                  
                   {/* Date Box */}
                   <div className="bg-orange-500 text-white rounded-xl p-4 min-w-20 text-center shrink-0">
                     <div className="text-3xl font-bold leading-none">{event.date}</div>
@@ -121,6 +92,7 @@ function Events() {
                     </svg>
                   </button>
                 </div>
+
               </div>
             </div>
           ))}
@@ -132,6 +104,7 @@ function Events() {
             View All Events
           </button>
         </div>
+
       </div>
     </section>
   );
