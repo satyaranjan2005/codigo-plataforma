@@ -208,95 +208,67 @@ export default function Page() {
             team && (team.problem_id || team.problemId || team.problem || team.problemStatement || team.registered || team.registered_for_case_study)
           );
           setAlreadyRegistered(registeredForCaseStudy);
-          // detect leader: check common leader fields or member roles
+          
+          // Check if current user is the team leader
           try {
-            // Build set of auth identifiers for the current user
-            const authIds = new Set();
-            const addAuth = (v) => { if (v != null) authIds.add(String(v)); };
-            addAuth(u?.sic); addAuth(u?.sic_no); addAuth(u?.sicNo); addAuth(u?.id); addAuth(u?.email); addAuth(u?.email_address);
-
             let leaderFound = false;
-
-            const pushCandidate = (c) => { if (c != null) {
-              try { if (Array.isArray(c)) c.forEach(x => pushCandidate(x)); else authIds.add(String(c)); } catch(e) {}
-            } };
-
-            // collect candidates from team object
-            const leaderCandidates = [];
-            if (team && typeof team === 'object') {
-              const keys = [
-                'leader','leader_id','leader_sic','leader_sic_no','team_leader','team_leader_id','owner','created_by','createdBy','captain','creator','createdBySic'
-              ];
-              for (const k of keys) {
-                const v = team[k];
-                if (v) leaderCandidates.push(v);
-              }
-              // also check nested leader object
-              if (team.leader && typeof team.leader === 'object') {
-                leaderCandidates.push(team.leader.id, team.leader.sic, team.leader.sic_no, team.leader.email);
-              }
-              // check members array for role flags and explicit leader flags
-              const tMembers = Array.isArray(team.members) ? team.members : Array.isArray(team.users) ? team.users : [];
-              for (const m of tMembers) {
-                if (!m) continue;
-                if (typeof m === 'string' || typeof m === 'number') leaderCandidates.push(m);
-                else if (typeof m === 'object') {
-                  leaderCandidates.push(m.sic, m.sic_no, m.id, m.email, m.email_address);
-                  const role = (m.role || m.roleName || m.position || m.title || "").toString().toLowerCase();
-                  if (role.includes('lead') || role.includes('captain') || role.includes('owner')) {
-                    leaderCandidates.push(m.sic || m.sic_no || m.id || m.email);
-                  }
-                  if (m.is_leader || m.leader || m.isLeader || m.isCaptain) {
-                    leaderCandidates.push(m.sic || m.sic_no || m.id || m.email);
-                  }
-                }
-              }
-            }
-
-            // also pull leader info from any local lastSavedTeam server fallback
+            
+            // First, check localStorage for team leader info (set during registration)
             try {
               const rawLast = typeof window !== 'undefined' ? localStorage.getItem('lastSavedTeam') : null;
-              const last = rawLast ? JSON.parse(rawLast) : null;
-              if (last && last.server) {
-                const s = last.server;
-                leaderCandidates.push(s.leader, s.leader_id, s.team_leader, s.team_leader_id, s.owner, s.created_by);
-                if (s.leader && typeof s.leader === 'object') leaderCandidates.push(s.leader.id, s.leader.sic, s.leader.sic_no, s.leader.email);
-              }
-            } catch (e) {}
-
-            // normalize candidates and check against authIds
-            for (const cand of leaderCandidates) {
-              if (!cand) continue;
-              if (Array.isArray(cand)) {
-                for (const c2 of cand) {
-                  if (c2 != null && authIds.has(String(c2))) { leaderFound = true; break; }
+              if (rawLast) {
+                const last = JSON.parse(rawLast);
+                // If lastSavedTeam has isLeader flag, use it
+                if (last.isLeader === true) {
+                  leaderFound = true;
+                  console.log('[Leader Check] Found from localStorage: isLeader = true');
                 }
-                if (leaderFound) break;
-              } else {
-                try {
-                  if (authIds.has(String(cand))) { leaderFound = true; break; }
-                } catch (e) {}
               }
+            } catch (e) {
+              console.warn('[Leader Check] Error reading localStorage:', e);
             }
-
-            // fallback: treat first member as leader if nothing explicit matched
-            if (!leaderFound) {
-              try {
-                const tMembers = Array.isArray(team?.members) ? team.members : Array.isArray(team?.users) ? team.users : [];
-                if (tMembers.length > 0) {
-                  const first = tMembers[0];
-                  let firstId = null;
-                  if (first) {
-                    if (typeof first === 'string' || typeof first === 'number') firstId = String(first);
-                    else if (typeof first === 'object') firstId = String(first.sic || first.sic_no || first.id || first.email || first.email_address || first.name || first.full_name || "");
-                  }
-                  if (firstId && authIds.has(firstId)) leaderFound = true;
+            
+            // If not found in localStorage, check API response
+            if (!leaderFound && team) {
+              const userIds = new Set();
+              if (u?.id) userIds.add(String(u.id));
+              if (u?.sic) userIds.add(String(u.sic));
+              if (u?.sic_no) userIds.add(String(u.sic_no));
+              if (u?.sicNo) userIds.add(String(u.sicNo));
+              if (u?.email) userIds.add(String(u.email));
+              
+              const leaderIds = new Set();
+              if (team.leader_sic) leaderIds.add(String(team.leader_sic));
+              if (team.leader_sic_no) leaderIds.add(String(team.leader_sic_no));
+              if (team.leader_id) leaderIds.add(String(team.leader_id));
+              if (team.team_leader) leaderIds.add(String(team.team_leader));
+              if (team.created_by) leaderIds.add(String(team.created_by));
+              
+              if (team.leader && typeof team.leader === 'object') {
+                if (team.leader.sic) leaderIds.add(String(team.leader.sic));
+                if (team.leader.sic_no) leaderIds.add(String(team.leader.sic_no));
+                if (team.leader.id) leaderIds.add(String(team.leader.id));
+              } else if (team.leader) {
+                leaderIds.add(String(team.leader));
+              }
+              
+              for (const userId of userIds) {
+                if (leaderIds.has(userId)) {
+                  leaderFound = true;
+                  break;
                 }
-              } catch (e) { /* ignore */ }
+              }
+              
+              console.log('[Leader Check] API check:', {
+                userIds: Array.from(userIds),
+                leaderIds: Array.from(leaderIds),
+                isLeader: leaderFound
+              });
             }
-
+            
             setIsTeamLeader(Boolean(leaderFound));
           } catch (e) {
+            console.error('[Leader Check Error]', e);
             setIsTeamLeader(false);
           }
         }

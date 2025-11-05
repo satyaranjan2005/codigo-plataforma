@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Home, Users, BarChart2, Settings, ClipboardList, Award, FileCheck } from "lucide-react"
+import { Calendar, Home, Users, BarChart2, Settings, ClipboardList, Award, FileCheck, FileText } from "lucide-react"
 
 import {
   Sidebar,
@@ -41,6 +41,7 @@ export function AppSidebar() {
     { title: "Event Page", url: "/dashboard/events" , icon: Calendar},
     { title: "Event Settings", url: "/dashboard/events/settings", icon: Settings },
     { title: "Registration", url: "/dashboard/events/registration", icon: ClipboardList },
+    { title: "Problem Statement", url: "/dashboard/events/case-study", icon: FileText },
     { title: "Certificate", url: "/dashboard/events/certificate", icon: FileCheck },
   ]
 

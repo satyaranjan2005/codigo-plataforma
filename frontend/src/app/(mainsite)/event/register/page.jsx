@@ -272,11 +272,26 @@ export default function RegisterPage() {
         const u = allUsers.find((x) => x.id === m) || results.find((x) => x.id === m);
         return u || { id: m };
       });
+      
+      // Get current user's info to mark as leader
+      const authUser = (() => {
+        try {
+          const raw = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          return null;
+        }
+      })();
+      
+      const leaderId = authUser?.id || authUser?.sic || authUser?.sic_no || authUser?.sicNo;
+      
       const lastSavedTeam = {
         server: serverData,
         team_name: name,
         members: members.slice(),
         membersInfo,
+        leader: leaderId, // Store the leader's ID
+        isLeader: true, // Current user is creating the team, so they're the leader
         savedAt: new Date().toISOString(),
       };
       try {

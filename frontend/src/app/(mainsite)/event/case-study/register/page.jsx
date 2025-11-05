@@ -85,6 +85,8 @@ export default function CaseStudyRegisterPage() {
 
   const [problemId, setProblemId] = useState("");
   const [teamInfo, setTeamInfo] = useState(null);
+  const [isTeamLeader, setIsTeamLeader] = useState(false);
+  const [checkingLeader, setCheckingLeader] = useState(true);
 
   // derived selected problem for easier rendering
     const selectedProblem = (problems || []).find(
@@ -119,14 +121,23 @@ export default function CaseStudyRegisterPage() {
   useEffect(() => {
     let mounted = true;
     async function loadTeamForUser(u) {
+      setCheckingLeader(true);
       if (!u) {
-        if (mounted) setTeamInfo(null);
+        if (mounted) {
+          setTeamInfo(null);
+          setIsTeamLeader(false);
+          setCheckingLeader(false);
+        }
         return;
       }
       // try a few common sic fields
       const sic = u.sic || u.sic_no || u.sicNo || u.SIC || u.sicNumber || u.sic_number || u.id;
       if (!sic) {
-        if (mounted) setTeamInfo(null);
+        if (mounted) {
+          setTeamInfo(null);
+          setIsTeamLeader(false);
+          setCheckingLeader(false);
+        }
         return;
       }
       try {
@@ -134,15 +145,86 @@ export default function CaseStudyRegisterPage() {
         // normalize response: expect the team object directly or wrapped
         const data = res?.data || res;
         const team = Array.isArray(data) ? data[0] : (data?.team || data?.teams?.[0] || data);
-        if (mounted) setTeamInfo(team || null);
+        if (mounted) {
+          setTeamInfo(team || null);
+          
+          // Check if current user is team leader
+          if (team) {
+            try {
+              const authIds = new Set();
+              const addAuth = (v) => { if (v != null) authIds.add(String(v)); };
+              addAuth(u?.sic); addAuth(u?.sic_no); addAuth(u?.sicNo); addAuth(u?.id); addAuth(u?.email);
+
+              let leaderFound = false;
+              const leaderCandidates = [];
+              
+              // Check common leader fields
+              const keys = ['leader','leader_id','leader_sic','team_leader','team_leader_id','owner','created_by','captain'];
+              for (const k of keys) {
+                if (team[k]) leaderCandidates.push(team[k]);
+              }
+              
+              // Check members array for roles
+              const members = Array.isArray(team.members) ? team.members : [];
+              for (const m of members) {
+                if (!m) continue;
+                if (typeof m === 'string') leaderCandidates.push(m);
+                else if (typeof m === 'object') {
+                  leaderCandidates.push(m.sic, m.sic_no, m.id, m.email);
+                  const role = (m.role || '').toString().toLowerCase();
+                  if (role.includes('lead') || role.includes('captain')) {
+                    leaderCandidates.push(m.sic || m.id || m.email);
+                  }
+                  if (m.is_leader || m.leader) {
+                    leaderCandidates.push(m.sic || m.id || m.email);
+                  }
+                }
+              }
+              
+              // Check if any candidate matches current user
+              for (const cand of leaderCandidates) {
+                if (cand && authIds.has(String(cand))) {
+                  leaderFound = true;
+                  break;
+                }
+              }
+              
+              // Fallback: first member is leader
+              if (!leaderFound && members.length > 0) {
+                const first = members[0];
+                const firstId = typeof first === 'string' ? first : (first?.sic || first?.sic_no || first?.id || first?.email);
+                if (firstId && authIds.has(String(firstId))) leaderFound = true;
+              }
+              
+              setIsTeamLeader(leaderFound);
+              
+              // If not a leader, redirect to event page
+              if (!leaderFound) {
+                setTimeout(() => {
+                  router.push('/event');
+                }, 100);
+              }
+            } catch (e) {
+              setIsTeamLeader(false);
+            }
+          } else {
+            setIsTeamLeader(false);
+          }
+          
+          setCheckingLeader(false);
+        }
       } catch (err) {
         console.warn("Failed to load team for user SIC:", err);
-        if (mounted) setTeamInfo(null);
+        if (mounted) {
+          setTeamInfo(null);
+          setIsTeamLeader(false);
+          setCheckingLeader(false);
+        }
       }
     }
     loadTeamForUser(authUser);
     return () => { mounted = false; };
-  }, [authUser]);
+  }, [authUser, router]);
 
   async function loadProblems() {
     setLoadingProblems(true);
@@ -209,6 +291,43 @@ export default function CaseStudyRegisterPage() {
       try { router.replace('/event'); } catch (e) { /* ignore */ }
     }
   }, [teamInfo, router]);
+
+  // Show loading state while checking if user is team leader
+  if (checkingLeader) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+          <p className="mt-4 text-lg text-slate-600">Verifying permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not a team leader
+  if (!isTeamLeader) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 mb-4">
+            <svg className="h-8 w-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-semibold text-slate-900 mb-2">Access Denied</h2>
+          <p className="text-slate-600 mb-6">
+            Only team leaders can register for case studies. Please contact your team leader to complete the registration.
+          </p>
+          <button
+            onClick={() => router.push('/event')}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          >
+            Back to Event
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
