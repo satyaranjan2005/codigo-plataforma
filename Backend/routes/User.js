@@ -190,5 +190,48 @@ router.patch('/:sic_no/role', authenticate, async (req, res, next) => {
   }
 });
 
+// POST /users/:sic_no/demote - demote an ADMIN to MEMBER
+router.post('/:sic_no/demote', authenticate, async (req, res, next) => {
+  console.log('Demote user request for sic_no:', req.params.sic_no);
+  try {
+    const auth = req.authUser || {};
+    const targetSic = req.params.sic_no;
+    if (!targetSic) return res.status(400).json({ error: 'Missing sic_no parameter' });
+
+    // fetch current user data
+    const targetUser = await prisma.student.findUnique({ where: { sic_no: targetSic } });
+    if (!targetUser) return res.status(404).json({ error: 'Student not found' });
+
+    const requesterRole = String((auth.role || '').toUpperCase());
+    const requesterSic = String(auth.sic_no);
+
+    // Only SUPERADMIN can demote other ADMINs. An ADMIN may demote themselves.
+    if (requesterSic !== String(targetSic) && requesterRole !== 'SUPERADMIN') {
+      return res.status(403).json({ error: 'Forbidden: only SUPERADMIN can demote other admins' });
+    }
+
+    // Target must be ADMIN to demote
+    if (String(targetUser.role).toUpperCase() !== 'ADMIN') {
+      return res.status(400).json({ error: 'Target user is not an ADMIN' });
+    }
+
+    // Prevent demoting a SUPERADMIN by mistake (shouldn't reach here because role check above)
+    if (String(targetUser.role).toUpperCase() === 'SUPERADMIN') {
+      return res.status(403).json({ error: 'Cannot demote a SUPERADMIN' });
+    }
+
+    const updated = await prisma.student.update({
+      where: { sic_no: targetSic },
+      data: { role: 'MEMBER' },
+      select: { sic_no: true, name: true, email: true, phone_no: true, role: true, year: true },
+    });
+
+    return res.json({ message: 'User demoted to MEMBER', user: updated });
+  } catch (err) {
+    console.error('Error demoting user:', err);
+    return next(err);
+  }
+});
+
 module.exports = router;
 

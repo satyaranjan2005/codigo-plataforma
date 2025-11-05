@@ -7,6 +7,7 @@ const { authenticate } = require('./_auth_middleware');
 // POST /teams
 // body: { team_name: string, members: [sic_no, ...] }
 router.post('/', authenticate, async (req, res, next) => {
+      console.log('Creating team with data:', req.body);
   try {
     const { team_name, members } = req.body || {};
     const requester = req.authUser && req.authUser.sic_no;
