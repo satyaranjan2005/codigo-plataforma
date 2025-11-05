@@ -6,21 +6,18 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            {/* <Link href="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold">CP</div>
-              <div>
-                <p className="font-semibold text-slate-900">Codigo</p>
-                <p className="text-sm text-slate-500">Build modern UIs faster.</p>
-              </div>
-            </Link> */}
-                      <Link href="/" className="flex items-center gap-2">
-            <img 
-              src="/logo.svg" 
-              alt="Codigo Logo" 
-              className="w-8 h-8 object-contain"
-            />
-            <span className="font-semibold text-slate-900">Codigo Platforma</span>
-          </Link>
+            
+            <Link href="/" className="flex items-center gap-2 group">
+                <img 
+                  src="/logo.svg" 
+                  alt="Codigo Logo" 
+                  className="w-18 h-18 object-contain transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(0,0,0,0.35)]"
+                />
+                <span className="font-semibold text-slate-900 transition-colors duration-300 group-hover:text-slate-700">
+                  Codigo Plataforma
+                </span>
+            </Link>
+
           </div>
 
           <div className="flex flex-col sm:flex-row sm:gap-8">

@@ -7,12 +7,12 @@ import { get } from "@/lib/api";
 const demoEvent = {
   title: "Design Mania",
   subtitle: "Competition",
-  banner: "https://images.unsplash.com/photo-1531058020387-3be344556be6?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3&s=1f1b7f7d8a8f0c2b1d6b1f9b2a7c3d4e",
-  logo: "https://images.unsplash.com/photo-1520975914723-8d3b2f3d9f1f?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.0.3&s=4b2a6d7f8e9a0b1c2d3e4f5a6b7c8d9e",
+  banner: "eventBanner.png",
+  logo: "eventLogo.png",
   about:
     "Design Mania 2024 presented by Codigo Plataforma is an individual UI/UX design competition where participants will demonstrate their research, creativity, and design skills. Participants will receive a case study, and they will have 24 hours to conduct research. Once research is submitted, participants will then design according to the case study.",
   importantDate: "2025-11-13",
-  organiserContact: "Codigo Platforma\nEmail: siliconcodingclub@gmail.com\nPhone: +91 6370 577 859",
+  organiserContact: "Codigo Plataforma\nEmail: siliconcodingclub@gmail.com\nPhone: +91 6370 577 859",
   location: "Seminar Hall and Lab 3 & 4",
     stages: [
     { id: 1, title: "Registration", start: "Nov 8", end: "Nov 11", time: "All day", description: "Open registrations for teams containing 3 members." },
