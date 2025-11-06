@@ -94,15 +94,23 @@ export default function Page() {
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [debugLastSaved, setDebugLastSaved] = useState(null);
   
-  // Case study unlock time: November 6, 2025 at 01:22 AM
+  // Case study unlock time from environment variable
   const [isCaseStudyUnlocked, setIsCaseStudyUnlocked] = useState(false);
 
   // Check if current time is past the unlock time
   useEffect(() => {
-    const unlockTime = new Date('2025-11-06T01:22:00').getTime();
+    const unlockTimeStr = process.env.NEXT_PUBLIC_CASE_STUDY_UNLOCK_TIME;
+    console.log('[Case Study] Unlock time from env:', unlockTimeStr);
+    
+    const unlockTime = new Date(unlockTimeStr).getTime();
+    console.log('[Case Study] Unlock timestamp:', unlockTime, 'Date:', new Date(unlockTime).toString());
+    
     const checkUnlockStatus = () => {
       const now = new Date().getTime();
-      setIsCaseStudyUnlocked(now >= unlockTime);
+      const isUnlocked = now >= unlockTime;
+      console.log('[Case Study] Current time:', now, 'Date:', new Date(now).toString());
+      console.log('[Case Study] Is unlocked?', isUnlocked, '(now >= unlock)');
+      setIsCaseStudyUnlocked(isUnlocked);
     };
     
     checkUnlockStatus();
@@ -380,6 +388,37 @@ export default function Page() {
     const t = setInterval(checkTime, 60 * 1000);
     return () => { mounted = false; clearInterval(t); };
   }, []);
+  
+  // Check if registration is closed (time from env variable)
+  const [isRegistrationClosed, setIsRegistrationClosed] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    function checkRegistrationTime() {
+      const now = new Date();
+      
+      // Get registration close time from env (ISO 8601 format or HH:MM for backward compatibility)
+      const closeTimeStr = process.env.NEXT_PUBLIC_REGISTRATION_CLOSE_TIME || "2025-11-11T23:00:00";
+      
+      // Check if it's ISO 8601 format (contains 'T') or just time (HH:MM)
+      let isClosed;
+      if (closeTimeStr.includes('T')) {
+        // ISO 8601 format: compare full date-time
+        const closeTime = new Date(closeTimeStr).getTime();
+        isClosed = now.getTime() >= closeTime;
+      } else {
+        // Legacy HH:MM format: compare only time
+        const h = now.getHours();
+        const m = now.getMinutes();
+        const [closeHour, closeMinute] = closeTimeStr.split(':').map(Number);
+        isClosed = (h > closeHour) || (h === closeHour && m >= closeMinute);
+      }
+      
+      if (mounted) setIsRegistrationClosed(isClosed);
+    }
+    checkRegistrationTime();
+    const t = setInterval(checkRegistrationTime, 60 * 1000);
+    return () => { mounted = false; clearInterval(t); };
+  }, []);
   // Team modal state shown after registration
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamName, setTeamName] = useState("");
@@ -525,7 +564,11 @@ export default function Page() {
                       <div className="text-[10px] sm:text-xs text-slate-500 wrap-break-word">{authUser?.email ?? "demo.user@example.com"}</div>
                     </div>
                     <div className="mt-3">
-                      { alreadyEventRegistered ? (
+                      { isRegistrationClosed ? (
+                          <div className="w-full px-3 py-2 bg-red-100 text-red-700 rounded-md text-center text-xs sm:text-sm font-medium">
+                            Registration Closed
+                          </div>
+                        ) : alreadyEventRegistered ? (
                           <div className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-md text-center text-xs sm:text-sm">Already registered</div>
                         ) : (
                           <button
@@ -557,7 +600,7 @@ export default function Page() {
                     <h4 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">Important Links</h4>
                     <div className="flex flex-col gap-2">
                       <a
-                        href="https://chat.whatsapp.com/your-group-link"
+                        href={process.env.NEXT_PUBLIC_WHATSAPP_GROUP_LINK || "https://chat.whatsapp.com/your-group-link"}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-md text-xs sm:text-sm hover:bg-green-700 transition"
@@ -575,7 +618,7 @@ export default function Page() {
                     <div className="flex flex-col gap-2">
                       {/* View Case Study button - visible to all registered members */}
                       <a
-                        href="/DesignMania-CaseStudy.pdf"
+                        href={process.env.NEXT_PUBLIC_CASE_STUDY_PDF || "/DesignMania-CaseStudy.pdf"}
                         download
                         className="inline-flex items-center justify-center px-3 py-2 bg-amber-500 text-white rounded-md text-xs sm:text-sm hover:bg-amber-600 transition"
                       >
