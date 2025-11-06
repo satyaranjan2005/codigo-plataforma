@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 function Preview({ src, alt, className }) {
@@ -11,81 +11,50 @@ function Preview({ src, alt, className }) {
 
 export default function EventsPage() {
   const storageKey = "eventAssets";
-  const [logo, setLogo] = useState(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return null;
-      return JSON.parse(raw).logo || null;
-    } catch (e) {
-      return null;
-    }
-  });
-
-  const [banner, setBanner] = useState(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return null;
-      return JSON.parse(raw).banner || null;
-    } catch (e) {
-      return null;
-    }
-  });
-
-  const [about, setAbout] = useState(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return "";
-      return JSON.parse(raw).about || "";
-    } catch (e) {
-      return "";
-    }
-  });
-
-  const [importantDate, setImportantDate] = useState(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return "";
-      return JSON.parse(raw).importantDate || "";
-    } catch (e) {
-      return "";
-    }
-  });
-
-  const [organiserContact, setOrganiserContact] = useState(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return "";
-      return JSON.parse(raw).organiserContact || "";
-    } catch (e) {
-      return "";
-    }
-  });
-
-  const [stages, setStages] = useState(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return [];
-      return JSON.parse(raw).stages || [];
-    } catch (e) {
-      return [];
-    }
-  });
-
+  const [logo, setLogo] = useState(null);
+  const [banner, setBanner] = useState(null);
+  const [about, setAbout] = useState("");
+  const [importantDate, setImportantDate] = useState("");
+  const [organiserContact, setOrganiserContact] = useState("");
+  const [stages, setStages] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [stageForm, setStageForm] = useState({ title: "", start: "", end: "", description: "" });
-
-  // prizes / rewards
-  const [prizes, setPrizes] = useState(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return [];
-      return JSON.parse(raw).prizes || [];
-    } catch (e) {
-      return [];
-    }
-  });
+  const [prizes, setPrizes] = useState([]);
   const [prizeEditingId, setPrizeEditingId] = useState(null);
   const [prizeForm, setPrizeForm] = useState({ title: "", amount: "", description: "" });
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load from localStorage only after component mounts (client-side only)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setLogo(parsed.logo || null);
+        setBanner(parsed.banner || null);
+        setAbout(parsed.about || "");
+        setImportantDate(parsed.importantDate || "");
+        setOrganiserContact(parsed.organiserContact || "");
+        setStages(parsed.stages || []);
+        setPrizes(parsed.prizes || []);
+      }
+    } catch (e) {
+      console.error("Failed to load from localStorage:", e);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Show loading state during initial hydration
+  if (!isLoaded) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-6 w-48 bg-gray-200 rounded mb-2"></div>
+          <div className="h-4 w-96 bg-gray-100 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   function readFileAsDataUrl(file) {
     return new Promise((resolve, reject) => {
