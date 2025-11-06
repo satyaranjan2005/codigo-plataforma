@@ -93,7 +93,7 @@ export function LoginForm({ className, ...props }) {
               <div className="flex flex-col items-center gap-2 text-center">
                 <h1 className="text-2xl font-bold">Welcome back</h1>
                 <p className="text-muted-foreground text-balance">
-                  Login to your Acme Inc account
+                  Login to your Codigo account
                 </p>
               </div>
               {error && <div className="text-sm text-red-600 text-center">{error}</div>}
@@ -104,9 +104,6 @@ export function LoginForm({ className, ...props }) {
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a href="#" className="ml-auto text-sm underline-offset-2 hover:underline">
-                    Forgot your password?
-                  </a>
                 </div>
                 <Input id="password" type="password" required value={password} onChange={(e)=>setPassword(e.target.value)} />
               </Field>

@@ -98,8 +98,15 @@ export function SignupForm({ className, ...props }) {
     } catch (err) {
       console.error('Registration error:', err);
       const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
-      toast.error(errorMessage);
+      
+      // More specific timeout handling
+      if (err?.code === 'ECONNABORTED' || errorMessage.includes('timeout')) {
+        setError("Registration is taking longer than expected. Please check your connection and try again.");
+        toast.error("Request timeout. The server might be busy. Please try again.");
+      } else {
+        setError(errorMessage);
+        toast.error(errorMessage);
+      }
     } finally {
       setLoading(false)
     }
