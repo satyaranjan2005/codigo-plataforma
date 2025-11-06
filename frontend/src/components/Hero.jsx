@@ -131,7 +131,7 @@ function Hero() {
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
         >
-          <img src="/hero.svg" alt="Coding illustration" className="w-full h-auto" />
+          <img src="/hero.svg" alt="Coding illustration" className="w-full h-auto hidden sm:block" />
         </motion.div>
       </motion.div>
 

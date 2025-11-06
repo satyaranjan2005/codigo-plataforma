@@ -15,9 +15,10 @@ const demoEvent = {
   organiserContact: "Codigo Plataforma\nEmail: siliconcodingclub@gmail.com\nPhone: +91 6370 577 859",
   location: "Seminar Hall and Lab 3 & 4",
     stages: [
-    { id: 1, title: "Registration", start: "Nov 8", end: "Nov 11", time: "All day", description: "Open registrations for teams containing 3 members." },
-    { id: 2, title: "Case Study Release", start: "Nov 12", end: "Nov 13", time: "12:00 AM (Release)", description: "Participants will receive the case study and have 24 hours to conduct research and submit their Research." },
+    { id: 1, title: "Registration", start: "Nov 7", end: "Nov 10", time: "All day", description: "Open registrations for teams." },
+    { id: 2, title: "Case Study Release", start: "Nov 11", end: "Nov 12", time: "10:00 PM - 10:00 PM", description: "Participants will receive the case study and have 24 hours to conduct research and submit their Research." },
     { id: 3, title: "Finals & Demos", start: "Nov 13", end: "Nov 13", time: "9:00 AM - 4:30 PM", description: "Final presentations, demos and judging taking place on-site." },
+    { id: 4, title: "Winner Announcement", start: "Nov 14", end: "Nov 14", time: "12:00 PM", description: "Winners will be announced." },
   ],
   prizes: [
     { id: 1, title: "1st Prize", amount: "1,500", description: "Grand prize for the winning team." },
@@ -636,13 +637,14 @@ export default function Page() {
                               Register for Case Study
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => alert('Upload research functionality coming soon!')}
+                          <a
+                            href={process.env.NEXT_PUBLIC_UPLOAD_RESEARCH_LINK || "https://forms.google.com/your-upload-form"}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-md text-xs sm:text-sm hover:bg-blue-700 transition"
                           >
                             Upload Research
-                          </button>
+                          </a>
                         </>
                       )}
                     </div>
