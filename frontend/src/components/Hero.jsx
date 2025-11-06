@@ -99,7 +99,7 @@ function Hero() {
             variants={slideUp}
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
           >
-            Join Codigo, a student-led coding club where innovation meets collaboration. Work on real projects, attend workshops, and grow with a community of passionate developers.
+            Join Codigo Plataforma, a student-led coding club where innovation meets collaboration. Work on real projects, attend workshops, and grow with a community of passionate developers.
           </motion.p>
           <motion.div
             className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4"

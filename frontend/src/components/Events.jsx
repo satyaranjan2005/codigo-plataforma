@@ -6,10 +6,9 @@ function Events() {
       month: "NOV",
       year: "2025",
       title: "Design Mania",
-      description: "Design Mania 2024 presented by Codigo Plataforma is an individual UI/UX design competition where participants will demonstrate their research, creativity, and design skills. Participants will receive a case study, and they will have 24 hours to conduct research. Once research is submitted, participants will then design according to the case study.",
+      description: "Design Mania 2025 presented by Codigo Plataforma is a team(Maximum of 3 members) UI/UX design competition where participants will demonstrate their research, creativity, and design skills. Participants will receive a case study, and they will have 24 hours to conduct research. Once research is submitted, participants will then design according to the case study.",
       category: "Competition",
-      attendees: 45,
-      time: "9:00 AM - 4:00 PM",
+      time: "9:00 AM - 4:30 PM",
       location: "Seminar Hall and Lab 3,4"
     }
   ];
@@ -56,7 +55,7 @@ function Events() {
                         <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
-                        {event.attendees} attending
+                       
                       </span>
                     </div>
                     <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2 group-hover:text-orange-500 transition-colors">

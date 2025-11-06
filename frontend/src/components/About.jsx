@@ -5,7 +5,7 @@ function About() {
         {/* Header */}
         <div className="text-center mb-8 sm:mb-10 md:mb-12">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-3 sm:mb-4">
-            About <span className="text-orange-500">Codigo Platforma</span>
+            About <span className="text-orange-500">Codigo Plataforma</span>
           </h2>
           <p className="text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto px-4">
             A student-led coding community focused on learning, building, and growing together through technology.
