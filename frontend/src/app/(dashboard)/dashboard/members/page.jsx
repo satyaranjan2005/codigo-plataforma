@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import MembersList from "../../../../components/MembersList";
 import AddMemberModal from "../../../../components/AddMemberModal";
+import SuperAdminGuard from "../../../../components/SuperAdminGuard";
 import api from "@/lib/api";
 
 function MembersPage() {
@@ -86,17 +87,17 @@ function MembersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Members</h2>
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+        <h2 className="text-xl sm:text-2xl font-semibold">Members</h2>
         <div>
           <button
             onClick={() => setModalOpen(true)}
             aria-label="Add member"
             title="Add member"
-            className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-600 text-white hover:bg-blue-700"
+            className="inline-flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-blue-600 text-white hover:bg-blue-700"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </div>
       </div>
@@ -104,9 +105,9 @@ function MembersPage() {
   {/* show only admins and superadmins */}
   <div>
     {loading ? (
-      <div className="p-6 bg-white rounded-md shadow-sm text-center">Loading…</div>
+      <div className="p-4 sm:p-6 bg-white rounded-md shadow-sm text-center text-sm sm:text-base">Loading…</div>
     ) : error ? (
-      <div className="p-6 bg-white rounded-md shadow-sm text-center text-rose-600">{error}</div>
+      <div className="p-4 sm:p-6 bg-white rounded-md shadow-sm text-center text-rose-600 text-sm sm:text-base">{error}</div>
     ) : (
       (() => {
         const visible = members.filter((m) => {
@@ -127,4 +128,10 @@ function MembersPage() {
   );
 }
 
-export default MembersPage;
+export default function ProtectedMembersPage() {
+  return (
+    <SuperAdminGuard>
+      <MembersPage />
+    </SuperAdminGuard>
+  );
+}

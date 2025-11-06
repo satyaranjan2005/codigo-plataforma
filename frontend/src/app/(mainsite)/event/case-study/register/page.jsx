@@ -140,84 +140,48 @@ export default function CaseStudyRegisterPage() {
         }
         return;
       }
+      // First check localStorage for leader status (set during registration)
+      let leaderFound = false;
+      try {
+        const rawLast = typeof window !== 'undefined' ? localStorage.getItem('lastSavedTeam') : null;
+        if (rawLast) {
+          const last = JSON.parse(rawLast);
+          if (last.isLeader === true) {
+            leaderFound = true;
+            console.log('[Case Study Register] Leader found from localStorage');
+          }
+        }
+      } catch (e) {
+        console.warn('[Case Study Register] Error reading localStorage:', e);
+      }
+      
+      // If not leader from localStorage, block access immediately
+      if (!leaderFound) {
+        console.log('[Case Study Register] Not a leader - redirecting to /event');
+        if (mounted) {
+          setIsTeamLeader(false);
+          setCheckingLeader(false);
+        }
+        // Redirect non-leaders immediately
+        router.replace('/event');
+        return;
+      }
+      
+      // If leader, proceed to load team info from API
       try {
         const res = await get(`/teams/member/${encodeURIComponent(String(sic))}`);
-        // normalize response: expect the team object directly or wrapped
         const data = res?.data || res;
         const team = Array.isArray(data) ? data[0] : (data?.team || data?.teams?.[0] || data);
         if (mounted) {
           setTeamInfo(team || null);
-          
-          // Check if current user is team leader
-          if (team) {
-            try {
-              const authIds = new Set();
-              const addAuth = (v) => { if (v != null) authIds.add(String(v)); };
-              addAuth(u?.sic); addAuth(u?.sic_no); addAuth(u?.sicNo); addAuth(u?.id); addAuth(u?.email);
-
-              let leaderFound = false;
-              const leaderCandidates = [];
-              
-              // Check common leader fields
-              const keys = ['leader','leader_id','leader_sic','team_leader','team_leader_id','owner','created_by','captain'];
-              for (const k of keys) {
-                if (team[k]) leaderCandidates.push(team[k]);
-              }
-              
-              // Check members array for roles
-              const members = Array.isArray(team.members) ? team.members : [];
-              for (const m of members) {
-                if (!m) continue;
-                if (typeof m === 'string') leaderCandidates.push(m);
-                else if (typeof m === 'object') {
-                  leaderCandidates.push(m.sic, m.sic_no, m.id, m.email);
-                  const role = (m.role || '').toString().toLowerCase();
-                  if (role.includes('lead') || role.includes('captain')) {
-                    leaderCandidates.push(m.sic || m.id || m.email);
-                  }
-                  if (m.is_leader || m.leader) {
-                    leaderCandidates.push(m.sic || m.id || m.email);
-                  }
-                }
-              }
-              
-              // Check if any candidate matches current user
-              for (const cand of leaderCandidates) {
-                if (cand && authIds.has(String(cand))) {
-                  leaderFound = true;
-                  break;
-                }
-              }
-              
-              // Fallback: first member is leader
-              if (!leaderFound && members.length > 0) {
-                const first = members[0];
-                const firstId = typeof first === 'string' ? first : (first?.sic || first?.sic_no || first?.id || first?.email);
-                if (firstId && authIds.has(String(firstId))) leaderFound = true;
-              }
-              
-              setIsTeamLeader(leaderFound);
-              
-              // If not a leader, redirect to event page
-              if (!leaderFound) {
-                setTimeout(() => {
-                  router.push('/event');
-                }, 100);
-              }
-            } catch (e) {
-              setIsTeamLeader(false);
-            }
-          } else {
-            setIsTeamLeader(false);
-          }
-          
+          setIsTeamLeader(true);
           setCheckingLeader(false);
         }
       } catch (err) {
         console.warn("Failed to load team for user SIC:", err);
         if (mounted) {
           setTeamInfo(null);
-          setIsTeamLeader(false);
+          setIsTeamLeader(true); // Keep them as leader even if API fails
           setCheckingLeader(false);
         }
       }

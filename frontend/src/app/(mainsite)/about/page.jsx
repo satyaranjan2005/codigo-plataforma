@@ -235,7 +235,7 @@ export default function AboutUsPage() {
     <div className="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
       {/* Hero Section */}
       <section
-        className="relative h-[80vh] flex flex-col justify-center items-center text-center overflow-hidden"
+        className="relative h-[60vh] sm:h-[70vh] md:h-[80vh] flex flex-col justify-center items-center text-center overflow-hidden px-4"
         style={{
           backgroundImage: "url('/logo.svg')", // make sure /public/about.svg exists
           backgroundSize: "cover",
@@ -253,12 +253,12 @@ export default function AboutUsPage() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
-          className="relative z-10 px-8 py-10 max-w-3xl rounded-2xl bg-white/50 backdrop-blur-md shadow-xl border border-white/30"
+          className="relative z-10 px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-10 max-w-3xl rounded-xl sm:rounded-2xl bg-white/50 backdrop-blur-md shadow-xl border border-white/30 w-full mx-4"
         >
           <motion.h1
             custom={0}
             variants={fadeInUp}
-            className="text-5xl sm:text-6xl font-extrabold tracking-tight uppercase text-slate-900 drop-shadow-[0_1px_2px_rgba(255,255,255,0.6)]"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight uppercase text-slate-900 drop-shadow-[0_1px_2px_rgba(255,255,255,0.6)]"
           >
             Codigo Plataforma
           </motion.h1>
@@ -266,7 +266,7 @@ export default function AboutUsPage() {
           <motion.p
             custom={0.15}
             variants={fadeInUp}
-            className="mt-6 text-lg sm:text-xl text-slate-800 font-semibold leading-relaxed drop-shadow-sm"
+            className="mt-4 sm:mt-5 md:mt-6 text-sm sm:text-base md:text-lg lg:text-xl text-slate-800 font-semibold leading-relaxed drop-shadow-sm"
           >
             A student-driven technology community at the Silicon Institute of
             Technology, Sambalpur — we teach modern software skills, run
@@ -278,7 +278,7 @@ export default function AboutUsPage() {
         {/* Slanted bottom divider */}
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0]">
           <svg
-            className="relative block w-[calc(100%+1.3px)] h-[70px]"
+            className="relative block w-[calc(100%+1.3px)] h-[50px] sm:h-[60px] md:h-[70px]"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 1200 120"
             preserveAspectRatio="none"
@@ -293,8 +293,8 @@ export default function AboutUsPage() {
       </section>
 
       {/* Feature / Highlights */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid md:grid-cols-2 gap-10 items-center">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-14 md:py-16">
+        <div className="grid md:grid-cols-2 gap-6 sm:gap-8 md:gap-10 items-center">
           <motion.img
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -302,19 +302,19 @@ export default function AboutUsPage() {
             viewport={{ once: true }}
             src="/logo.svg"
             alt="Codigo Plataforma — classes and events"
-            className="rounded-2xl shadow-lg w-full object-cover h-80"
+            className="rounded-xl sm:rounded-2xl shadow-lg w-full object-cover h-60 sm:h-72 md:h-80"
           />
 
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
-            className="space-y-4"
+            className="space-y-3 sm:space-y-4"
           >
             <motion.h2
               custom={0.05}
               variants={fadeInUp}
-              className="text-3xl font-bold text-slate-900 mb-2"
+              className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2"
             >
               What We Do
             </motion.h2>
@@ -322,7 +322,7 @@ export default function AboutUsPage() {
             <motion.p
               custom={0.15}
               variants={fadeInUp}
-              className="text-slate-700 mb-2 leading-relaxed"
+              className="text-sm sm:text-base text-slate-700 mb-2 leading-relaxed"
             >
               Codigo Plataforma empowers students to build practical technical
               skills through structured learning, project work, and community
@@ -333,7 +333,7 @@ export default function AboutUsPage() {
             <motion.ul
               custom={0.25}
               variants={fadeInUp}
-              className="list-disc pl-5 text-slate-700 space-y-2"
+              className="list-disc pl-4 sm:pl-5 text-sm sm:text-base text-slate-700 space-y-1.5 sm:space-y-2"
             >
               <li>
                 <strong>Hands-on Workshops:</strong> Deep dives into web,
@@ -353,24 +353,24 @@ export default function AboutUsPage() {
       </section>
 
       {/* Feature cards */}
-      <section className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-12 sm:mb-16 md:mb-20">
         {/* Structured Learning */}
         <motion.article
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-2xl overflow-hidden shadow-lg group"
+          className="relative rounded-xl sm:rounded-2xl overflow-hidden shadow-lg group"
         >
           <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
             style={{ backgroundImage: "url('/learning.png')" }}
           />
           <div className="absolute inset-0 pointer-events-none bg-black/60 group-hover:bg-black/50 transition-all duration-300" />
-          <div className="relative z-10 p-8 flex flex-col justify-end h-64 text-white">
-            <h3 className="text-2xl font-bold mb-2 drop-shadow-lg">
+          <div className="relative z-10 p-5 sm:p-6 md:p-8 flex flex-col justify-end h-56 sm:h-60 md:h-64 text-white">
+            <h3 className="text-xl sm:text-2xl font-bold mb-1.5 sm:mb-2 drop-shadow-lg">
               Structured Learning
             </h3>
-            <p className="text-sm text-gray-200 leading-relaxed">
+            <p className="text-xs sm:text-sm text-gray-200 leading-relaxed">
               Curated courses and study tracks that guide beginners to
               intermediate contributors through practical exercises.
             </p>
@@ -382,7 +382,7 @@ export default function AboutUsPage() {
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="relative rounded-2xl overflow-hidden shadow-lg group"
+          className="relative rounded-xl sm:rounded-2xl overflow-hidden shadow-lg group"
         >
           <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
@@ -390,11 +390,11 @@ export default function AboutUsPage() {
           />
           {/* FIX: add base color so opacity works */}
           <div className="absolute inset-0 pointer-events-none bg-black/60 group-hover:bg-black/50 transition-all duration-300" />
-          <div className="relative z-10 p-8 flex flex-col justify-end h-64 text-white">
-            <h3 className="text-2xl font-bold mb-2 drop-shadow-lg">
+          <div className="relative z-10 p-5 sm:p-6 md:p-8 flex flex-col justify-end h-56 sm:h-60 md:h-64 text-white">
+            <h3 className="text-xl sm:text-2xl font-bold mb-1.5 sm:mb-2 drop-shadow-lg">
               Competitions & Events
             </h3>
-            <p className="text-sm text-gray-200 leading-relaxed">
+            <p className="text-xs sm:text-sm text-gray-200 leading-relaxed">
               Regular hackathons, coding contests, and speaker sessions to build
               experience and network with peers.
             </p>
@@ -406,18 +406,18 @@ export default function AboutUsPage() {
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="relative rounded-2xl overflow-hidden shadow-lg group"
+          className="relative rounded-xl sm:rounded-2xl overflow-hidden shadow-lg group sm:col-span-2 md:col-span-1"
         >
           <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
             style={{ backgroundImage: "url('community.jpg')" }}
           />
           <div className="absolute inset-0 pointer-events-none bg-black/60 group-hover:bg-black/50 transition-all duration-300" />
-          <div className="relative z-10 p-8 flex flex-col justify-end h-64 text-white">
-            <h3 className="text-2xl font-bold mb-2 drop-shadow-lg">
+          <div className="relative z-10 p-5 sm:p-6 md:p-8 flex flex-col justify-end h-56 sm:h-60 md:h-64 text-white">
+            <h3 className="text-xl sm:text-2xl font-bold mb-1.5 sm:mb-2 drop-shadow-lg">
               Mentorship & Community
             </h3>
-            <p className="text-sm text-gray-200 leading-relaxed">
+            <p className="text-xs sm:text-sm text-gray-200 leading-relaxed">
               Peer mentorship, project reviews, and collaboration channels to
               accelerate learning and career readiness.
             </p>
@@ -431,14 +431,14 @@ export default function AboutUsPage() {
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
         viewport={{ once: true, amount: 0.3 }}
-        className="bg-white rounded-3xl shadow-xl p-10 max-w-6xl mx-auto mb-16"
+        className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-6 sm:p-8 md:p-10 max-w-6xl mx-4 sm:mx-auto mb-12 sm:mb-14 md:mb-16"
       >
-        <div className="md:flex justify-between items-center gap-8">
-          <div>
-            <h3 className="text-2xl font-semibold text-slate-900 mb-4">
+        <div className="md:flex justify-between items-center gap-6 sm:gap-8">
+          <div className="mb-6 md:mb-0">
+            <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 mb-3 sm:mb-4">
               Our Mission
             </h3>
-            <p className="text-slate-700 leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
               To bridge academic learning and industry practice by delivering
               project-led training, fostering collaboration, and creating a
               supportive environment where students can build portfolio-ready
@@ -447,7 +447,7 @@ export default function AboutUsPage() {
           </div>
           <a
             href="#events"
-            className="mt-6 md:mt-0 inline-block px-6 py-3 bg-slate-900 text-white rounded-md font-medium hover:opacity-90 transition-all"
+            className="inline-block w-full sm:w-auto text-center px-5 sm:px-6 py-2.5 sm:py-3 bg-slate-900 text-white rounded-md font-medium hover:opacity-90 transition-all text-sm sm:text-base whitespace-nowrap"
           >
             See Upcoming Events
           </a>

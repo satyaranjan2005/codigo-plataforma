@@ -5,6 +5,28 @@ import api from "@/lib/api";
 
 export default function RegisterPage() {
   const router = useRouter();
+  
+  // Authentication check
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // Check if user is authenticated
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("authToken");
+      const user = localStorage.getItem("authUser");
+      
+      if (!token || !user) {
+        // Not authenticated, redirect to login
+        router.replace("/login");
+        return;
+      }
+      
+      setIsAuthenticated(true);
+      setCheckingAuth(false);
+    }
+  }, [router]);
+
   // Simplified: start with an empty team name (no localStorage)
   const [teamName, setTeamName] = useState("");
   const [query, setQuery] = useState("");
@@ -89,6 +111,10 @@ export default function RegisterPage() {
 
   // No localStorage usage in this component by design
 
+  // State to track if user is already registered
+  const [checkingRegistration, setCheckingRegistration] = useState(true);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+
   // Block access if user is already registered for event (check local lastSavedTeam or backend)
   useEffect(() => {
     let mounted = true;
@@ -98,15 +124,23 @@ export default function RegisterPage() {
         const rawAuth = localStorage.getItem("authUser");
         const auth = rawAuth ? JSON.parse(rawAuth) : null;
         const sic = auth && (auth.sic || auth.sic_no || auth.sicNo || auth.id || auth.email);
-        // 1) quick local check
+        
+        // 1) Quick local check - this is instant
         try {
           const rawLast = localStorage.getItem("lastSavedTeam");
           if (rawLast && sic) {
             const last = JSON.parse(rawLast);
+            // Check if this user is in the team (either as leader or member)
             const members = Array.isArray(last?.members) ? last.members : (Array.isArray(last?.server?.members) ? last.server.members : []);
-            const matches = Array.isArray(members) && members.some((m) => String(m) === String(sic) || String(m) === String(auth.id) || String(m) === String(auth.email));
-            if (matches) {
-              try { router.replace('/event'); } catch (e) {}
+            const isLeader = last?.isLeader === true || last?.leader === String(sic);
+            const isMember = Array.isArray(members) && members.some((m) => String(m) === String(sic) || String(m) === String(auth.id) || String(m) === String(auth.email));
+            
+            if (isLeader || isMember) {
+              if (mounted) {
+                setAlreadyRegistered(true);
+                setCheckingRegistration(false);
+              }
+              router.replace('/event');
               return;
             }
           }
@@ -114,34 +148,43 @@ export default function RegisterPage() {
           // ignore
         }
 
-        // 2) backend check
-        if (!sic) return;
+        // 2) Backend check if localStorage doesn't show registration
+        if (!sic) {
+          if (mounted) setCheckingRegistration(false);
+          return;
+        }
+        
         try {
           const res = await api.get(`/teams/member/${encodeURIComponent(String(sic))}`);
           const data = res?.data || res;
           const team = Array.isArray(data) ? data[0] : (data?.team || data?.teams?.[0] || data);
+          
           if (team && mounted) {
-            try { router.replace('/event'); } catch (e) {}
+            setAlreadyRegistered(true);
+            setCheckingRegistration(false);
+            router.replace('/event');
             return;
           }
         } catch (err) {
-          // no-op; allow page if backend lookup fails
+          // Allow page if backend lookup fails (network issue, etc.)
+        }
+        
+        // User is not registered, allow access
+        if (mounted) {
+          setAlreadyRegistered(false);
+          setCheckingRegistration(false);
         }
       } catch (e) {
-        // ignore
+        if (mounted) setCheckingRegistration(false);
       }
     }
     checkAlreadyRegistered();
     return () => { mounted = false; };
-  }, []);
+  }, [router]);
 
   // (no-op) leaderId previously synced here — leader is derived below instead of stored
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
-  // teams list fetched from backend
-  const [teams, setTeams] = useState([]);
-  const [teamsLoading, setTeamsLoading] = useState(false);
-  const [teamsError, setTeamsError] = useState(null);
 
   // Note: pendingRegistration (if present) is applied during initial state setup above to avoid
   // calling setState synchronously inside an effect which can cause cascading renders.
@@ -302,16 +345,6 @@ export default function RegisterPage() {
         console.warn("Failed to persist lastSavedTeam to localStorage:", e);
       }
 
-      // refresh teams list
-      try {
-        const res2 = await api.get("/teams");
-        const data2 = res2?.data;
-        const list2 = Array.isArray(data2) ? data2 : Array.isArray(data2?.teams) ? data2.teams : [];
-        setTeams(list2);
-      } catch (err) {
-        console.warn("Failed to refresh teams after save:", err);
-      }
-
       // show success toast then redirect
       setToastMsg("Team saved successfully");
       setShowToast(true);
@@ -330,70 +363,93 @@ export default function RegisterPage() {
     }
   }
 
-  // load teams for display
-  useEffect(() => {
-    let mounted = true;
-    async function loadTeams() {
-      setTeamsLoading(true);
-      setTeamsError(null);
-      try {
-        const res = await api.get("/teams");
-        if (!mounted) return;
-        const data = res?.data;
-        // normalize teams: expect array of { team_name? name? members? }
-        const list = Array.isArray(data) ? data : Array.isArray(data?.teams) ? data.teams : [];
-        setTeams(list);
-      } catch (err) {
-        console.warn("Failed to load teams:", err);
-        if (mounted) setTeamsError(err?.message || "Failed to load teams");
-      } finally {
-        if (mounted) setTeamsLoading(false);
-      }
-    }
-    loadTeams();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  // Show loading state while checking authentication
+  if (checkingAuth) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-3 sm:p-6">
+        <div className="text-center">
+          <div className="inline-block h-10 w-10 sm:h-12 sm:w-12 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+          <p className="mt-3 sm:mt-4 text-base sm:text-lg text-slate-600">Verifying authentication...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Show loading state while checking registration
+  if (checkingRegistration) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-3 sm:p-6">
+        <div className="text-center">
+          <div className="inline-block h-10 w-10 sm:h-12 sm:w-12 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+          <p className="mt-3 sm:mt-4 text-base sm:text-lg text-slate-600">Checking registration status...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Show blocked state if already registered (shouldn't normally see this due to redirect)
+  if (alreadyRegistered) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-3 sm:p-6">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-green-100 mb-3 sm:mb-4">
+            <svg className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 mb-2">Already Registered</h2>
+          <p className="text-sm sm:text-base text-slate-600 mb-4 sm:mb-6">
+            You have already registered for this event. You cannot register again.
+          </p>
+          <button
+            onClick={() => router.push('/event')}
+            className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm sm:text-base"
+          >
+            Go to Event Page
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-semibold">Event Registration</h1>
-        <p className="mt-2 text-sm text-slate-600">Create a team for the event: add a team name and select exactly 2 members.</p>
-        <div className="mt-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-sm text-blue-800">
+    <main className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
+      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow p-4 sm:p-5 md:p-6">
+        <h1 className="text-xl sm:text-2xl font-semibold">Event Registration</h1>
+        <p className="mt-2 text-xs sm:text-sm text-slate-600">Create a team for the event: add a team name and select exactly 2 members.</p>
+        <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-xs sm:text-sm text-blue-800">
             <strong>Team Requirements:</strong> You must add exactly 2 members to create a valid team.
           </p>
         </div>
 
-        <form onSubmit={handleSaveTeam} className="mt-6 space-y-6">
+        <form onSubmit={handleSaveTeam} className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Team Name</label>
+            <label className="block text-xs sm:text-sm font-medium text-slate-700">Team Name</label>
             <input
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              className="mt-2 block w-full border rounded-md px-3 py-2"
+              className="mt-1.5 sm:mt-2 block w-full border rounded-md px-3 py-2 text-sm sm:text-base"
               placeholder="Team Awesome"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700">
               Selected members ({members.length}/2)
             </label>
             <div className="mt-2 space-y-2">
-              {members.length === 0 && <div className="text-sm text-slate-500">No members yet. Add exactly 2 members.</div>}
+              {members.length === 0 && <div className="text-xs sm:text-sm text-slate-500">No members yet. Add exactly 2 members.</div>}
               {members.map((mId) => {
                 const user = allUsers.find((u) => u.id === mId) || results.find((u) => u.id === mId) || { id: mId, name: mId, email: "" };
                 return (
-                  <div key={mId} className="flex items-center justify-between border rounded-md px-3 py-2">
-                    <div>
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-xs text-slate-500">{user.email}</div>
+                  <div key={mId} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 border rounded-md px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm sm:text-base wrap-break-word">{user.name}</div>
+                      <div className="text-[10px] sm:text-xs text-slate-500 wrap-break-word">{user.email}</div>
                     </div>
-                    <div>
-                      <button type="button" onClick={() => removeMember(mId)} className="px-3 py-1 border rounded-md text-sm">Remove</button>
+                    <div className="w-full sm:w-auto">
+                      <button type="button" onClick={() => removeMember(mId)} className="w-full sm:w-auto px-3 py-1 border rounded-md text-xs sm:text-sm hover:bg-gray-50 transition">Remove</button>
                     </div>
                   </div>
                 );
@@ -402,27 +458,27 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Search users</label>
+            <label className="block text-xs sm:text-sm font-medium text-slate-700">Search users</label>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="mt-2 block w-full border rounded-md px-3 py-2"
+              className="mt-1.5 sm:mt-2 block w-full border rounded-md px-3 py-2 text-sm sm:text-base"
               placeholder="Search by name or email"
             />
 
             <div className="mt-3 grid grid-cols-1 gap-2">
-              {results.length === 0 && <div className="text-sm text-slate-500">No users found.</div>}
+              {results.length === 0 && <div className="text-xs sm:text-sm text-slate-500">No users found.</div>}
               {results.slice(0, 4).map((u) => (
-                <div key={u.id} className="flex items-center justify-between border rounded-md px-3 py-2">
-                  <div>
-                    <div className="font-medium">{u.name}</div>
-                    <div className="text-xs text-slate-500">{u.email}</div>
+                <div key={u.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 border rounded-md px-3 py-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm sm:text-base wrap-break-word">{u.name}</div>
+                    <div className="text-[10px] sm:text-xs text-slate-500 wrap-break-word">{u.email}</div>
                   </div>
-                  <div>
+                  <div className="w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => addMember(u)}
-                      className="px-3 py-1 bg-indigo-600 text-white rounded-md text-sm disabled:opacity-50"
+                      className="w-full sm:w-auto px-3 py-1 bg-indigo-600 text-white rounded-md text-xs sm:text-sm disabled:opacity-50 hover:bg-indigo-700 transition"
                       disabled={members.includes(u.id) || members.length >= 2}
                     >
                       Add
@@ -433,56 +489,15 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => router.push("/event")} className="px-4 py-2 border rounded-md">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md">Save Team</button>
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+            <button type="button" onClick={() => router.push("/event")} className="w-full sm:w-auto px-4 py-2 border rounded-md text-sm sm:text-base hover:bg-gray-50 transition">Cancel</button>
+            <button type="submit" className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md text-sm sm:text-base hover:bg-indigo-700 transition">Save Team</button>
           </div>
         </form>
-        {/* Teams list */}
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold">Teams</h2>
-          {teamsLoading ? (
-            <div className="mt-3 p-4 bg-white rounded-md shadow-sm">Loading teams…</div>
-          ) : teamsError ? (
-            <div className="mt-3 p-4 bg-white rounded-md shadow-sm text-rose-600">{teamsError}</div>
-          ) : teams.length === 0 ? (
-            <div className="mt-3 p-4 bg-white rounded-md shadow-sm text-slate-500">No teams yet.</div>
-          ) : (
-            <div className="mt-3 space-y-3">
-              {teams.map((t, idx) => {
-                // normalize fields
-                const name = t.team_name || t.name || t.teamName || `Team ${idx + 1}`;
-                const tMembers = Array.isArray(t.members) ? t.members : Array.isArray(t.users) ? t.users : [];
-                return (
-                  <div key={name + idx} className="bg-white p-4 rounded-md shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">{name}</div>
-                      <div className="text-sm text-slate-500">{tMembers.length} member{tMembers.length !== 1 ? "s" : ""}</div>
-                    </div>
-                    <div className="mt-2 grid grid-cols-1 gap-2">
-                      {tMembers.map((m) => {
-                        // member might be an id string or an object
-                        const user = typeof m === "string" ? (allUsers.find((u) => u.id === m) || { id: m, name: m, email: "" }) : m;
-                        return (
-                          <div key={typeof m === "string" ? m : (m.id || JSON.stringify(m))} className="flex items-center justify-between border rounded-md px-3 py-2">
-                            <div>
-                              <div className="font-medium">{user.name}</div>
-                              <div className="text-xs text-slate-500">{user.email}</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
         {/* Toast */}
         {showToast && (
-          <div className="fixed right-4 bottom-6 z-50">
-            <div className="rounded-md bg-emerald-600 text-white px-4 py-2 shadow-md">
+          <div className="fixed right-3 sm:right-4 bottom-4 sm:bottom-6 z-50 left-3 sm:left-auto">
+            <div className="rounded-md bg-emerald-600 text-white px-3 sm:px-4 py-2 shadow-md text-xs sm:text-sm">
               {toastMsg}
             </div>
           </div>

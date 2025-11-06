@@ -14,9 +14,12 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { post as apiPost } from "@/lib/api"
+import { useToast } from "@/components/Toast"
+import { getErrorMessage } from "@/lib/errorHandler"
 
 export function SignupForm({ className, ...props }) {
   const router = useRouter()
+  const toast = useToast()
   const [name, setName] = useState("")
   const [sic_no, setSic] = useState("")
   const [email, setEmail] = useState("")
@@ -29,22 +32,36 @@ export function SignupForm({ className, ...props }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError("")
+    
+    // Client-side validation
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
+      const errorMsg = "Passwords do not match";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      return;
     }
+    
     if ((password || "").length < 8) {
-      setError("Password must be at least 8 characters")
-      return
+      const errorMsg = "Password must be at least 8 characters";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      return;
     }
 
     setLoading(true)
+    
     try {
       const payload = { name, sic_no, email, phone_no, password }
       const res = await apiPost("/auth/register", payload)
+      
       // if server returns token, store it
       if (res?.token) {
-        try { localStorage.setItem("authToken", res.token); } catch (e) { /* ignore */ }
+        try { 
+          localStorage.setItem("authToken", res.token); 
+        } catch (e) { 
+          console.error('Failed to store auth token:', e);
+        }
+        
         try {
           // Merge server response with form data to ensure sic_no, name, email are always present
           const serverUser = res?.user || res?.profile || (res?.data && res.data.user) || {};
@@ -59,15 +76,30 @@ export function SignupForm({ className, ...props }) {
           localStorage.setItem("sic_no", user.sic_no);
           localStorage.setItem("name", user.name);
           localStorage.setItem("email", user.email);
-        } catch (e) { /* ignore */ }
-        try { window.dispatchEvent(new Event('authChange')); } catch (e) { /* ignore */ }
+        } catch (e) { 
+          console.error('Failed to store user data:', e);
+        }
+        
+        try { 
+          window.dispatchEvent(new Event('authChange')); 
+        } catch (e) { 
+          console.error('Failed to dispatch auth change:', e);
+        }
+        
+        // Show success message
+        toast.success("Registration successful! Redirecting...");
+        
         // Use window.location to ensure full page reload with new auth state
-        window.location.href = "/";
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 500);
         return;
       }
     } catch (err) {
-      console.error(err)
-      setError(err?.message || (err?.response?.data?.message) || "Failed to register")
+      console.error('Registration error:', err);
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false)
     }

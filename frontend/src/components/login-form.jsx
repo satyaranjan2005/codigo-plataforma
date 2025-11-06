@@ -14,9 +14,12 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { post as apiPost } from "@/lib/api"
+import { useToast } from "@/components/Toast"
+import { getErrorMessage } from "@/lib/errorHandler"
 
 export function LoginForm({ className, ...props }) {
   const router = useRouter()
+  const toast = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -26,11 +29,18 @@ export function LoginForm({ className, ...props }) {
     e.preventDefault()
     setError("")
     setLoading(true)
+    
     try {
       const payload = { email, password }
       const res = await apiPost("/auth/login", payload)
+      
       if (res?.token) {
-        try { localStorage.setItem("authToken", res.token); } catch (e) { /* ignore */ }
+        try { 
+          localStorage.setItem("authToken", res.token); 
+        } catch (e) { 
+          console.error('Failed to store auth token:', e);
+        }
+        
         // persist user info ensuring sic_no, name, email are always present
         try {
           const serverUser = res?.user || res?.profile || (res?.data && res.data.user) || {};
@@ -45,20 +55,30 @@ export function LoginForm({ className, ...props }) {
           if (user.sic_no) localStorage.setItem("sic_no", user.sic_no);
           localStorage.setItem("name", user.name);
           localStorage.setItem("email", user.email);
-        } catch (e) { /* ignore */ }
-        try { window.dispatchEvent(new Event('authChange')); } catch (e) { /* ignore */ }
+        } catch (e) { 
+          console.error('Failed to store user data:', e);
+        }
+        
+        try { 
+          window.dispatchEvent(new Event('authChange')); 
+        } catch (e) { 
+          console.error('Failed to dispatch auth change:', e);
+        }
+        
+        // Show success message
+        toast.success("Login successful! Redirecting...");
+        
         // Use window.location to ensure full page reload with new auth state
-        window.location.href = "/";
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 500);
         return;
       }
     } catch (err) {
-      console.error(err)
-      // If server returned 401, show a clearer message
-      if (err?.response?.status === 401) {
-        setError("User not found");
-      } else {
-        setError(err?.response?.data?.message || err?.message || "Login failed");
-      }
+      console.error('Login error:', err);
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false)
     }

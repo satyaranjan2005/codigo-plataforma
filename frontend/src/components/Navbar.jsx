@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Menu, X, Inbox, LogOut } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { get } from "@/lib/api";
 import clsx from "clsx";
+import Image from "next/image";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -128,7 +129,7 @@ export default function Navbar() {
             </Link> */}
 
           <Link href="/" className="flex items-center gap-2 group">
-            <img 
+            <img
               src="/logo.svg" 
               alt="Codigo Logo"
               className="w-18 h-18 object-contain transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(0,0,0,0.35)]"
@@ -165,13 +166,6 @@ export default function Navbar() {
               {!isAuthenticated ? (
                 <>
 
-                <Link
-  href="/about"
-  className="text-sm px-3 py-2 rounded-md hover:bg-slate-100 text-slate-700"
->
-  About
-</Link>
-
                   <Link
                     href="/login"
                     className="text-sm px-3 py-2 rounded-md hover:bg-slate-100 text-slate-700"
@@ -191,9 +185,6 @@ export default function Navbar() {
                     {user && user.name ? (user.name.split(' ')[0][0] || user.name[0]) : (user?.email ? user.email[0].toUpperCase() : 'U')}
                   </div>
                   <div className="text-sm text-slate-700 mr-2">{user?.name || user?.email || 'User'}</div>
-                  <button aria-label="Inbox" title="Inbox" onClick={() => router.push('/inbox')} className="p-2 rounded-md hover:bg-slate-100">
-                    <Inbox className="w-5 h-5 text-slate-700" />
-                  </button>
                   <button aria-label="Sign out" title="Sign out" onClick={handleSignOut} className="p-2 rounded-md hover:bg-slate-100">
                     <LogOut className="w-5 h-5 text-rose-600" />
                   </button>

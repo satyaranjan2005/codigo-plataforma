@@ -69,6 +69,23 @@ export default function Page() {
   const [isTeamLeader, setIsTeamLeader] = useState(false);
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [debugLastSaved, setDebugLastSaved] = useState(null);
+  
+  // Case study unlock time: November 6, 2025 at 01:22 AM
+  const [isCaseStudyUnlocked, setIsCaseStudyUnlocked] = useState(false);
+
+  // Check if current time is past the unlock time
+  useEffect(() => {
+    const unlockTime = new Date('2025-11-06T01:22:00').getTime();
+    const checkUnlockStatus = () => {
+      const now = new Date().getTime();
+      setIsCaseStudyUnlocked(now >= unlockTime);
+    };
+    
+    checkUnlockStatus();
+    // Check every minute in case page is left open
+    const interval = setInterval(checkUnlockStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // respond to auth changes dispatched elsewhere in the app
   useEffect(() => {
@@ -372,7 +389,7 @@ export default function Page() {
     <main className="min-h-screen bg-gray-50 text-slate-800">
       {/* Hero */}
       <section className="relative">
-        <div className="h-64 md:h-96 w-full bg-gray-200 overflow-hidden">
+        <div className="h-48 sm:h-64 md:h-96 w-full bg-gray-200 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={demoEvent.banner} alt="Event banner" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-linear-to-b from-black/30 to-transparent" />
@@ -380,190 +397,182 @@ export default function Page() {
         {/* logo/title card moved below the banner */}
       </section>
 
-  <section className="container mx-auto px-4 mt-6 md:mt-10">
-        <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-lg shadow-lg p-4 md:p-6 flex items-center gap-4 md:gap-6">
-          <div className="shrink-0 w-20 h-20 md:w-28 md:h-28 rounded overflow-hidden bg-white">
+  <section className="container mx-auto px-3 sm:px-4 mt-4 sm:mt-6 md:mt-10">
+        <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-lg shadow-lg p-3 sm:p-4 md:p-6 flex items-center gap-3 sm:gap-4 md:gap-6">
+          <div className="shrink-0 w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded overflow-hidden bg-white">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={demoEvent.logo} alt="Event logo" className="w-full h-full object-cover" />
           </div>
-          <div className="flex-1">
-            <h1 className="text-lg md:text-2xl font-bold">{demoEvent.title}</h1>
-            <p className="text-sm md:text-base text-slate-600 mt-1">{demoEvent.subtitle}</p>
-            <div className="mt-3 flex items-center gap-3 flex-wrap">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-sm text-slate-700">{demoEvent.importantDate}</div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-sm text-slate-700">{demoEvent.location}</div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base sm:text-lg md:text-2xl font-bold wrap-break-word">{demoEvent.title}</h1>
+            <p className="text-xs sm:text-sm md:text-base text-slate-600 mt-1 wrap-break-word">{demoEvent.subtitle}</p>
+            <div className="mt-2 sm:mt-3 flex items-center gap-2 sm:gap-3 flex-wrap">
+              <div className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 rounded-full bg-slate-100 text-xs sm:text-sm text-slate-700">{demoEvent.importantDate}</div>
+              <div className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 rounded-full bg-slate-100 text-xs sm:text-sm text-slate-700 wrap-break-word">{demoEvent.location}</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Main content */}
-      <section className="container mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <main className="lg:col-span-2 space-y-8">
-            <article className="bg-white border rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold">About the event</h2>
-              <p className="mt-3 text-slate-700 leading-relaxed">{demoEvent.about}</p>
+      <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 md:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+          <main className="lg:col-span-2 space-y-4 sm:space-y-6 md:space-y-8">
+            <article className="bg-white border rounded-lg p-4 sm:p-5 md:p-6 shadow-sm">
+              <h2 className="text-lg sm:text-xl font-semibold">About the event</h2>
+              <p className="mt-2 sm:mt-3 text-sm sm:text-base text-slate-700 leading-relaxed">{demoEvent.about}</p>
             </article>
-            <article className="bg-white border rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">Eligibility</h3>
-              <p className="mt-3 text-slate-700 leading-relaxed">
+            <article className="bg-white border rounded-lg p-4 sm:p-5 md:p-6 shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold">Eligibility</h3>
+              <p className="mt-2 sm:mt-3 text-sm sm:text-base text-slate-700 leading-relaxed">
                 This event is open to all the students of Silicon Institute of Technology, Sambalpur to showcase their UI/UX skills. Teams (up to maximum 3 members) are welcome.
                 Participants must register before {demoEvent.importantDate} and agree to the
                 event code of conduct.
               </p>
-              <ul className="mt-4 list-disc list-inside text-slate-600 space-y-1">
+              <ul className="mt-3 sm:mt-4 list-disc list-inside text-sm sm:text-base text-slate-600 space-y-1">
                 <li>Inter-branch teams are encouraged. </li>
                 <li>Inter-batch teams are encouraged</li>
               </ul>
             </article>
 
-            <article className="bg-white border rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">Timeline</h3>
-              <div className="mt-4 space-y-4">
+            <article className="bg-white border rounded-lg p-4 sm:p-5 md:p-6 shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold">Timeline</h3>
+              <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
                 {demoEvent.stages.map((s, idx) => (
-                  <div key={s.id} className="flex items-start gap-4">
-                    <div className="shrink-0 mt-1">
-                      <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-semibold">{idx + 1}</div>
+                  <div key={s.id} className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                    <div className="shrink-0 mt-0 sm:mt-1">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-semibold text-sm sm:text-base">{idx + 1}</div>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium">{s.title}</div>
-                        <div className="text-sm text-slate-500 text-right">
-                          <div>{s.start} — {s.end}</div>
-                          {s.time && <div className="text-xs text-slate-400 mt-1">{s.time}</div>}
+                    <div className="flex-1 w-full min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="font-medium text-sm sm:text-base">{s.title}</div>
+                        <div className="text-xs sm:text-sm text-slate-500">
+                          <div className="whitespace-nowrap">{s.start} — {s.end}</div>
+                          {s.time && <div className="text-[10px] sm:text-xs text-slate-400 mt-1">{s.time}</div>}
                         </div>
                       </div>
-                      {s.description && <div className="mt-2 text-sm text-slate-600">{s.description}</div>}
+                      {s.description && <div className="mt-2 text-xs sm:text-sm text-slate-600">{s.description}</div>}
                       {/* Link to view the Case Study details - only visible to team leader */}
-                      {s.id === 2 && isTeamLeader && (
-                        <div className="mt-3 flex items-center gap-3">
-                          <a
-                            href="/DesignMania-CaseStudy.pdf"
-                            download
-                            className="inline-flex items-center px-3 py-2 bg-amber-500 text-white rounded-md text-sm hover:bg-amber-600 transition"
-                          >
-                            View Case Study
-                          </a>
-                          {/* Register for case study button: only visible when not already registered */}
-                          {!alreadyRegistered && (
-                            <button
-                              type="button"
-                              onClick={() => router.push('/event/case-study/register')}
-                              className="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 transition"
-                            >
-                              Register for Case Study
-                            </button>
-                          )}
-                        </div>
-                      )}
-                      {debugEnabled && (
-                        <div className="fixed bottom-4 right-4 z-50 w-96 max-w-full p-3 bg-white border rounded shadow text-xs">
-                          <div className="flex justify-between items-center mb-2">
-                            <div className="font-semibold text-sm">Event Debug</div>
-                            <button onClick={() => {
-                              try {
-                                setDebugEnabled(false);
-                                const p = new URLSearchParams(window.location.search);
-                                p.delete('debug');
-                                const ns = p.toString();
-                                const url = window.location.pathname + (ns ? `?${ns}` : '');
-                                window.history.replaceState(null, '', url);
-                              } catch (e) {}
-                            }} className="text-xs px-2 py-1 border rounded">Close</button>
-                          </div>
-                          <pre className="whitespace-pre-wrap max-h-64 overflow-auto">{JSON.stringify({ authUser, teamInfo, isTeamLeader, alreadyRegistered, alreadyEventRegistered, forceShowRegisterByTime, lastSavedTeam: debugLastSaved }, null, 2)}</pre>
-                        </div>
-                      )}
+                      
                     </div>
                   </div>
                 ))}
               </div>
             </article>
 
-            <article className="bg-white border rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">Rewards & Prizes</h3>
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <article className="bg-white border rounded-lg p-4 sm:p-5 md:p-6 shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold">Rewards & Prizes</h3>
+              <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                 {demoEvent.prizes.map((p, i) => (
-                  <div key={p.id} className={`border rounded-lg p-4 ${i === 0 ? 'bg-amber-50 border-amber-200' : 'bg-white'}`}>
-                    <div className="flex items-baseline justify-between">
-                      <div className="font-medium">{p.title}</div>
-                      <div className="text-sm text-slate-600">{p.amount}</div>
+                  <div key={p.id} className={`border rounded-lg p-3 sm:p-4 ${i === 0 ? 'bg-amber-50 border-amber-200' : 'bg-white'}`}>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="font-medium text-sm sm:text-base">{p.title}</div>
+                      <div className="text-xs sm:text-sm text-slate-600 whitespace-nowrap">{p.amount}</div>
                     </div>
-                    {p.description && <div className="mt-2 text-sm text-slate-600">{p.description}</div>}
+                    {p.description && <div className="mt-2 text-xs sm:text-sm text-slate-600">{p.description}</div>}
                   </div>
                 ))}
               </div>
             </article>
           </main>
 
-          <aside className="space-y-6">
-            <div className="sticky top-24 space-y-4">
-                  <div className="bg-white border rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-slate-700">
-                      <div className="font-medium">{authUser?.name ?? "Demo User"}</div>
-                      <div className="text-xs text-slate-500">{authUser?.email ?? "demo.user@example.com"}</div>
+          <aside className="space-y-4 sm:space-y-6">
+            <div className="lg:sticky lg:top-24 space-y-3 sm:space-y-4">
+                  <div className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
+                    <div className="text-xs sm:text-sm text-slate-700">
+                      <div className="font-medium text-sm sm:text-base">{authUser?.name ?? "Demo User"}</div>
+                      <div className="text-[10px] sm:text-xs text-slate-500 wrap-break-word">{authUser?.email ?? "demo.user@example.com"}</div>
                     </div>
                     <div className="mt-3">
                       { alreadyEventRegistered ? (
-                          <div className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-md text-center">Already registered</div>
+                          <div className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-md text-center text-xs sm:text-sm">Already registered</div>
                         ) : (
                           <button
                             onClick={() => {
+                              // Check authentication before showing rules
+                              const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+                              if (!token) {
+                                router.push('/login');
+                                return;
+                              }
                               setPendingReg({ name: authUser?.name ?? "Demo User", email: authUser?.email ?? "demo.user@example.com" });
                               setShowRules(true);
                             }}
-                            className="w-full px-3 py-2 bg-indigo-600 text-white rounded-md"
+                            className="w-full px-3 py-2 bg-indigo-600 text-white rounded-md text-sm sm:text-base hover:bg-indigo-700 transition"
                           >
                             Register
                           </button>
                         )}
                       </div>
-                      <div className="mt-3 text-sm text-slate-700">
+                      <div className="mt-3 text-xs sm:text-sm text-slate-700 space-y-1">
                         <div>Total registered: <span className="font-semibold">{regCount}</span></div>
                         <div>Team size: <span className="font-semibold">{teamSize ? `${teamSize}` : '3'}</span></div>
-                        <div className="mt-2 pt-2 border-t border-slate-200">
-                          <div className="text-xs">
-                            <div>Team Leader: <span className={`font-semibold ${isTeamLeader ? 'text-green-600' : 'text-slate-500'}`}>{isTeamLeader ? 'Yes' : 'No'}</span></div>
-                            <div>Case Study Registered: <span className={`font-semibold ${alreadyRegistered ? 'text-blue-600' : 'text-slate-500'}`}>{alreadyRegistered ? 'Yes' : 'No'}</span></div>
-                          </div>
-                        </div>
                       </div>
                     </div>
 
-                {/* Case study quick actions: only visible to team leader */}
-                {isTeamLeader && (
-                  <div className="bg-white border rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-slate-500">Case Study</div>
-                    <div className="mt-3 flex items-center gap-3">
+                {/* WhatsApp Group - Always visible to registered members */}
+                {alreadyEventRegistered && (
+                  <div className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
+                    <h4 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">Important Links</h4>
+                    <div className="flex flex-col gap-2">
+                      <a
+                        href="https://chat.whatsapp.com/your-group-link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-md text-xs sm:text-sm hover:bg-green-700 transition"
+                      >
+                        Join WhatsApp Group
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Case Study Links - Only visible after unlock time */}
+                {alreadyEventRegistered && isCaseStudyUnlocked && (
+                  <div className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
+                    <h4 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">Case Study</h4>
+                    <div className="flex flex-col gap-2">
+                      {/* View Case Study button - visible to all registered members */}
                       <a
                         href="/DesignMania-CaseStudy.pdf"
                         download
-                        className="inline-flex items-center px-3 py-2 bg-amber-500 text-white rounded-md text-sm hover:bg-amber-600 transition"
+                        className="inline-flex items-center justify-center px-3 py-2 bg-amber-500 text-white rounded-md text-xs sm:text-sm hover:bg-amber-600 transition"
                       >
                         View Case Study
                       </a>
-                      {!alreadyRegistered && (
-                        <button
-                          type="button"
-                          onClick={() => router.push('/event/case-study/register')}
-                          className="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 transition"
-                        >
-                          Register for Case Study
-                        </button>
+                      {/* Register and Upload buttons only visible to team leader */}
+                      {isTeamLeader && (
+                        <>
+                          {!alreadyRegistered && (
+                            <button
+                              type="button"
+                              onClick={() => router.push('/event/case-study/register')}
+                              className="inline-flex items-center justify-center px-3 py-2 bg-indigo-600 text-white rounded-md text-xs sm:text-sm hover:bg-indigo-700 transition"
+                            >
+                              Register for Case Study
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => alert('Upload research functionality coming soon!')}
+                            className="inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-md text-xs sm:text-sm hover:bg-blue-700 transition"
+                          >
+                            Upload Research
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
                 )}
 
-              <div className="bg-white border rounded-lg p-4 shadow-sm">
-                <div className="text-sm text-slate-500">Contact the organisers</div>
-                <pre className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">{demoEvent.organiserContact}</pre>
+              <div className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
+                <div className="text-xs sm:text-sm text-slate-500">Contact the organisers</div>
+                <pre className="mt-2 text-xs sm:text-sm text-slate-700 whitespace-pre-wrap wrap-break-word">{demoEvent.organiserContact}</pre>
               </div>
 
-              <div className="bg-white border rounded-lg p-4 shadow-sm">
-                <h4 className="text-sm font-medium">Venue</h4>
-                <div className="mt-2 text-sm text-slate-700">{demoEvent.location}</div>
+              <div className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
+                <h4 className="text-xs sm:text-sm font-medium">Venue</h4>
+                <div className="mt-2 text-xs sm:text-sm text-slate-700 wrap-break-word">{demoEvent.location}</div>
               </div>
             </div>
           </aside>
@@ -571,12 +580,12 @@ export default function Page() {
       </section>
       {/* Rules modal shown before registering */}
       {showRules && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowRules(false)} />
-          <div className="relative bg-white rounded-lg shadow-lg max-w-xl w-full mx-4 p-6">
-            <h3 className="text-lg font-semibold">Event Rules &amp; Guidelines</h3>
+          <div className="relative bg-white rounded-lg shadow-lg max-w-xl w-full mx-auto p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-semibold">Event Rules &amp; Guidelines</h3>
       
-            <div className="mt-3 text-sm text-slate-700 space-y-2">
+            <div className="mt-3 text-xs sm:text-sm text-slate-700 space-y-2">
   <p>• Each team may have up to 3 members.</p>
   <p>• Participants must submit research within 24 hours of the case study release.</p>
   <p>• Follow the code of conduct and respect intellectual property rules.</p>
@@ -592,8 +601,8 @@ export default function Page() {
   <p>• After you agree with the terms and conditions you cannot back-out from the competition.</p>
 </div>
 
-            <div className="mt-4 flex justify-end gap-3">
-              <button onClick={() => setShowRules(false)} className="px-3 py-2 rounded-md border">Cancel</button>
+            <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+              <button onClick={() => setShowRules(false)} className="w-full sm:w-auto px-3 py-2 rounded-md border text-sm sm:text-base">Cancel</button>
               <button
                 onClick={() => {
                   // persist pending registration so the register page can use it if needed
@@ -608,7 +617,7 @@ export default function Page() {
                   // navigate to registration page
                   try { router.push("/event/register"); } catch (e) { console.error(e); }
                 }}
-                className="px-3 py-2 bg-indigo-600 text-white rounded-md"
+                className="w-full sm:w-auto px-3 py-2 bg-indigo-600 text-white rounded-md text-sm sm:text-base hover:bg-indigo-700 transition"
               >
                 I Agree &amp; Register
               </button>

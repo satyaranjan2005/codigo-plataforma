@@ -100,7 +100,7 @@ function Home(){
   }, [validating]);
 
   return(
-    <div className="space-y-12 p-6 md:p-8 lg:p-12">
+    <div className="space-y-8 sm:space-y-10 md:space-y-12 p-4 sm:p-6 md:p-8 lg:p-12">
       <Hero />
       <About />
       <Events />

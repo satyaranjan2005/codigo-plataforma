@@ -75,8 +75,7 @@ const students = [
     for (const p of problems) {
       let found = await prisma.problemStatement.findFirst({ where: { title: p.title } });
       if (!found) {
-        // ProblemStatement model currently only has a `title` field in the schema
-        found = await prisma.problemStatement.create({ data: { title: p.title } });
+        found = await prisma.problemStatement.create({ data: { title: p.title, description: p.description || null } });
         console.log(`Created problem: ${p.title} (id=${found.id})`);
       } else {
         console.log(`Problem exists: ${p.title} (id=${found.id})`);

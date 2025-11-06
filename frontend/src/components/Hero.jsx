@@ -55,7 +55,7 @@ function Hero() {
 
   return (
     <motion.div
-      className="flex flex-col lg:flex-row gap-6"
+      className="flex flex-col lg:flex-row gap-4 sm:gap-6"
       variants={page}
       initial="hidden"
       animate="visible"
@@ -63,7 +63,7 @@ function Hero() {
       {/* Left large panel */}
       <motion.div
         variants={slideLeft}
-        className="lg:flex-[3] bg-white rounded-2xl p-8 lg:p-10 flex flex-col justify-between min-h-[400px] relative overflow-hidden shadow-sm border border-gray-200"
+        className="lg:flex-[3] bg-white rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col justify-between min-h-[350px] sm:min-h-[400px] relative overflow-hidden shadow-sm border border-gray-200"
       >
         {/* Soft gradient blob background */}
         <motion.div
@@ -75,49 +75,50 @@ function Hero() {
 
         {/* Badge */}
         <motion.div
-          className="inline-flex items-center gap-2 self-start px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full shadow-md"
+          className="inline-flex items-center gap-1.5 sm:gap-2 self-start px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full shadow-md"
           animate={{ scale: [1, 1.03, 1] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
-          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
           </svg>
-          <span className="text-xs font-bold text-white">Next event: Nov 13, 2025</span>
+          <span className="text-[10px] sm:text-xs font-bold text-white whitespace-nowrap">Next event: Nov 13, 2025</span>
         </motion.div>
 
         {/* Hero Text */}
-        <div className="mt-8 mb-8 relative z-10">
+        <div className="mt-4 sm:mt-6 md:mt-8 mb-4 sm:mb-6 md:mb-8 relative z-10">
           <motion.h1
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight"
             variants={slideUp}
           >
             Build. Learn. Ship.<br />
             <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Together.</span>
           </motion.h1>
           <motion.p
-            className="mt-4 text-lg text-slate-600 max-w-xl"
+            className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-slate-600 max-w-xl"
             variants={slideUp}
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
           >
             Join Codigo, a student-led coding club where innovation meets collaboration. Work on real projects, attend workshops, and grow with a community of passionate developers.
           </motion.p>
           <motion.div
-            className="mt-6 flex items-center gap-4"
+            className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4"
             variants={slideUp}
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.15 }}
           >
-            <motion.button
+            <motion.a
+              href="/register"
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="px-6 py-3 bg-slate-900 text-white rounded-full font-semibold hover:bg-slate-800 transition shadow-lg"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 bg-slate-900 text-white rounded-full font-semibold hover:bg-slate-800 transition shadow-lg text-center text-sm sm:text-base"
             >
               Join the club
-            </motion.button>
+            </motion.a>
             <motion.a
               href="/event"
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-full font-semibold hover:border-slate-400 transition"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 border-2 border-slate-300 text-slate-700 rounded-full font-semibold hover:border-slate-400 transition text-center text-sm sm:text-base"
             >
               Latest event
             </motion.a>
@@ -126,7 +127,7 @@ function Hero() {
 
         {/* Illustration (slower float) */}
         <motion.div
-          className="absolute bottom-0 right-0 w-[280px] md:w-[360px] lg:w-[420px] opacity-90"
+          className="absolute bottom-0 right-0 w-[200px] sm:w-[280px] md:w-[360px] lg:w-[420px] opacity-90"
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
         >
@@ -135,20 +136,20 @@ function Hero() {
       </motion.div>
 
       {/* Right side column */}
-      <motion.div className="lg:flex-1 flex flex-col gap-6" variants={slideRight}>
+      <motion.div className="lg:flex-1 flex flex-col sm:flex-row lg:flex-col gap-4 sm:gap-6" variants={slideRight}>
         {/* Logo Card */}
         <motion.div
           variants={slideUp}
           whileHover={{ scale: 1.02 }}
-          className="flex-1 bg-white rounded-2xl rounded-br-none p-6 border-4 border-orange-500 relative overflow-hidden min-h-[180px] shadow-lg flex items-center justify-center"
+          className="flex-1 bg-white rounded-2xl rounded-br-none p-4 sm:p-6 border-4 border-orange-500 relative overflow-hidden min-h-[160px] sm:min-h-[180px] shadow-lg flex items-center justify-center"
         >
-          <img src="/logo.svg" alt="Codigo Logo" className="w-40 h-40 object-contain" />
+          <img src="/logo.svg" alt="Codigo Logo" className="w-32 h-32 sm:w-40 sm:h-40 object-contain" />
         </motion.div>
 
         {/* Countdown Card */}
         <motion.div
           variants={slideUp}
-          className="flex-1 bg-black rounded-2xl rounded-tr-none p-6 text-white flex items-center justify-center min-h-[180px] shadow-lg"
+          className="flex-1 bg-black rounded-2xl rounded-tr-none p-4 sm:p-6 text-white flex items-center justify-center min-h-[160px] sm:min-h-[180px] shadow-lg"
         >
           <div className="text-center">
             <motion.div
@@ -156,7 +157,7 @@ function Hero() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: "easeOut" }}
-              className="text-sm text-gray-300 mb-2"
+              className="text-xs sm:text-sm text-gray-300 mb-2"
             >
               {messages[messageIndex]}
             </motion.div>
@@ -167,12 +168,12 @@ function Hero() {
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="text-4xl md:text-5xl font-extrabold text-orange-400 tabular-nums"
+              className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-orange-400 tabular-nums"
             >
               {rounded}
             </motion.div>
 
-            <div className="text-sm text-gray-400 mt-2">November 13, 2025</div>
+            <div className="text-xs sm:text-sm text-gray-400 mt-2">November 13, 2025</div>
           </div>
         </motion.div>
       </motion.div>

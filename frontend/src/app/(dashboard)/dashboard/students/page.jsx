@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import MembersList from "../../../../components/MembersList";
 import AddMemberModal from "../../../../components/AddMemberModal";
+import SuperAdminGuard from "../../../../components/SuperAdminGuard";
 import { Plus } from "lucide-react";
 import api from "@/lib/api";
 
@@ -132,4 +133,10 @@ function StudentsPage() {
   );
 }
 
-export default StudentsPage;
+export default function ProtectedStudentsPage() {
+  return (
+    <SuperAdminGuard>
+      <StudentsPage />
+    </SuperAdminGuard>
+  );
+}

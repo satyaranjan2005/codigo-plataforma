@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { Calendar, Home, Users, BarChart2, Settings, ClipboardList, Award, FileCheck, FileText } from "lucide-react"
+import { Calendar, Home, Users, BarChart2, Settings, ClipboardList, Award, FileCheck, FileText, ArrowLeft } from "lucide-react"
 
 import {
   Sidebar,
@@ -29,20 +30,41 @@ const items = [
 
 export function AppSidebar() {
   const pathname = usePathname() || "/"
+  const [userRole, setUserRole] = useState(null)
+
+  useEffect(() => {
+    // Get user role from localStorage
+    try {
+      const raw = localStorage.getItem("authUser")
+      if (raw) {
+        const user = JSON.parse(raw)
+        const role = (user?.role || user?.roleName || "").toString().toLowerCase()
+        setUserRole(role)
+      }
+    } catch (e) {
+      console.error("Error loading user role:", e)
+    }
+  }, [])
 
   const menu = useMemo(() => {
-    return items.map((item) => {
+    // Filter items based on role
+    let filteredItems = items
+    
+    if (userRole === "admin") {
+      // Admins only see Event tab
+      filteredItems = items.filter(item => item.title === "Event")
+    }
+    // Superadmins see all tabs (no filter)
+    
+    return filteredItems.map((item) => {
       const isActive = item.url && pathname === item.url || (item.url !== "/" && pathname.startsWith(item.url + "/"))
       return { ...item, isActive }
     })
-  }, [pathname])
+  }, [pathname, userRole])
 
   const eventSub = [
-    { title: "Event Page", url: "/dashboard/events" , icon: Calendar},
-    { title: "Event Settings", url: "/dashboard/events/settings", icon: Settings },
     { title: "Registration", url: "/dashboard/events/registration", icon: ClipboardList },
     { title: "Problem Statement", url: "/dashboard/events/case-study", icon: FileText },
-    { title: "Certificate", url: "/dashboard/events/certificate", icon: FileCheck },
   ]
 
   return (
@@ -52,10 +74,18 @@ export function AppSidebar() {
         {/* Brand / header */}
         <div className="px-4 py-6 border-b border-sidebar-border">
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-md bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground font-bold text-xl">CP</div>
+            <div className="h-14 w-14 rounded-md bg-white flex items-center justify-center">
+              <Image 
+                src="/logo.svg" 
+                alt="Codigo Platform Logo" 
+                width={56} 
+                height={56}
+                className="object-contain"
+              />
+            </div>
             <div>
               <div className="text-xl font-semibold text-sidebar-foreground">Codigo</div>
-              <div className="text-sm text-sidebar-foreground/70">Platform</div>
+              <div className="text-sm text-sidebar-foreground/70">Plataforma</div>
             </div>
           </div>
         </div>
@@ -106,6 +136,22 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 )
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Back to Home Page */}
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild size="lg" tooltip="Back to Home Page">
+                  <Link href="/" className="flex items-center gap-5 w-full py-3 px-2 group-data-[collapsible=icon]:justify-center" aria-label="Back to Home Page">
+                    <ArrowLeft className="w-8 h-8" />
+                    <span className="flex-1 text-sm font-medium">Back to Home</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

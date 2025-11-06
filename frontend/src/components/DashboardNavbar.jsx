@@ -1,21 +1,39 @@
 "use client"
 
-import { usePathname } from "next/navigation"
-import { Bell, Search, ChevronDown, User } from "lucide-react"
-import NotificationsPanel from "@/components/NotificationsPanel"
-import { useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { RefreshCw, Search, User } from "lucide-react"
+import { useState, useEffect } from "react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function DashboardNavbar() {
   const pathname = usePathname() || "/"
+  const router = useRouter()
   const showSearch = pathname.startsWith("/dashboard/students")
-  const [open, setOpen] = useState(false)
+  const [user, setUser] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
 
-  const notifications = [
-    { title: "New registration", description: "A user registered for Event A" },
-    { title: "Certificate issued", description: "Certificates issued for Event B" },
-    { title: "Result published", description: "Winners announced for Event C" },
-  ]
+  useEffect(() => {
+    // Get user from localStorage
+    try {
+      const raw = localStorage.getItem("authUser")
+      if (raw) {
+        setUser(JSON.parse(raw))
+      }
+    } catch (e) {
+      console.error("Error loading user:", e)
+    }
+  }, [])
+
+  const handleRefresh = () => {
+    setRefreshing(true)
+    // Refresh Next.js router cache
+    router.refresh()
+    // Also reload the entire page to refetch all data
+    window.location.reload()
+  }
+
+  const userName = user?.name || user?.full_name || "User"
+  const userRole = user?.role || user?.roleName || "User"
 
   return (
     <header className="w-full bg-white border-b border-slate-100">
@@ -43,23 +61,27 @@ export default function DashboardNavbar() {
               </div>
             )}
 
-            <div className="relative">
-              <button onClick={() => setOpen((v) => !v)} className="relative p-2 rounded-md hover:bg-slate-50">
-                <Bell className="w-5 h-5 text-slate-700" />
-                <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium leading-none text-white bg-rose-600 rounded">3</span>
-              </button>
-              <NotificationsPanel open={open} onClose={() => setOpen(false)} items={notifications} />
-            </div>
+            {/* Refresh Button */}
+            <button 
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-2 rounded-md hover:bg-slate-50 transition"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-5 h-5 text-slate-700 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
 
+            {/* User Info */}
             <div className="flex items-center gap-2 pl-2 border-l border-slate-100">
-              <button className="flex items-center gap-2 p-1 rounded hover:bg-slate-50">
-                <User className="w-6 h-6 text-slate-700" />
-                <div className="hidden sm:flex flex-col text-sm text-left">
-                  <span className="font-medium text-slate-900">Satya</span>
-                  <span className="text-xs text-slate-500">Admin</span>
+              <div className="flex items-center gap-2 p-1">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-medium text-sm">
+                  {userName.charAt(0).toUpperCase()}
                 </div>
-                <ChevronDown className="w-4 h-4 text-slate-500" />
-              </button>
+                <div className="hidden sm:flex flex-col text-sm text-left">
+                  <span className="font-medium text-slate-900">{userName}</span>
+                  <span className="text-xs text-slate-500 capitalize">{userRole}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -67,5 +89,7 @@ export default function DashboardNavbar() {
     </header>
   )
 }
+
+
 
 
