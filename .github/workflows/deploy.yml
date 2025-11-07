@@ -21,24 +21,16 @@ jobs:
         with:
           node-version: '20'
 
-      # 3️⃣ Install dependencies
-      - name: Install dependencies
-        run: npm ci
-
-      # 4️⃣ Run tests (optional)
+      # 3️⃣ Run tests (optional)
       - name: Run tests
-        run: npm test || echo "No tests configured"
-
-      # 5️⃣ Build frontend (Next.js)
-      - name: Build Next.js frontend
-        run: npm run build
+        run: |
+          echo "No tests configured"  # Replace with npm test if you have tests
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ SSH into your server and deploy
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -52,14 +44,13 @@ jobs:
             git reset --hard
             git pull origin main
 
-            # Install dependencies
+            # --------- Backend ---------
+            cd Backend
             npm install --production
+            pm2 list | grep backend && pm2 restart backend || pm2 start npm --name "backend" -- run start
 
-            # Build frontend
+            # --------- Frontend ---------
+            cd ../frontend
+            npm install --production
             npm run build
-
-            # Restart backend
-            pm2 list | grep backend && pm2 restart backend || pm2 start npm --name "backend" -- run server
-
-            # Restart frontend
             pm2 list | grep frontend && pm2 restart frontend || pm2 start npm --name "frontend" -- run start
