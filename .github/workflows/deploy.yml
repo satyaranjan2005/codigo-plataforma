@@ -50,7 +50,7 @@ jobs:
             pm2 list | grep backend && pm2 restart backend || pm2 start npm --name "backend" -- run start
 
             # --------- Frontend ---------
-            cd ../frontend
+            cd frontend
             npm install --production
             npm run build
             pm2 list | grep frontend && pm2 restart frontend || pm2 start npm --name "frontend" -- run start
