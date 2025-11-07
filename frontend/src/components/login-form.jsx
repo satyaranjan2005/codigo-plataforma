@@ -26,11 +26,29 @@ export function LoginForm({ className, ...props }) {
     e.preventDefault()
     setError("")
     setLoading(true)
+    
+    // Validate inputs
+    if (!email || !password) {
+      setError("Please enter both email and password");
+      setLoading(false);
+      return;
+    }
+    
     try {
-      const payload = { email, password }
+      const payload = { email: email.trim(), password }
+      console.log('Attempting login with:', { email: email.trim() });
+      
       const res = await apiPost("/auth/login", payload)
+      console.log('Login response:', res);
+      
       if (res?.token) {
-        try { localStorage.setItem("authToken", res.token); } catch (e) { /* ignore */ }
+        try { 
+          localStorage.setItem("authToken", res.token);
+          console.log('Token stored successfully');
+        } catch (e) { 
+          console.error('Failed to store token:', e);
+        }
+        
         // persist user info ensuring sic_no, name, email are always present
         try {
           const serverUser = res?.user || res?.profile || (res?.data && res.data.user) || {};
@@ -45,19 +63,44 @@ export function LoginForm({ className, ...props }) {
           if (user.sic_no) localStorage.setItem("sic_no", user.sic_no);
           localStorage.setItem("name", user.name);
           localStorage.setItem("email", user.email);
-        } catch (e) { /* ignore */ }
-        try { window.dispatchEvent(new Event('authChange')); } catch (e) { /* ignore */ }
+          console.log('User data stored successfully');
+        } catch (e) { 
+          console.error('Failed to store user data:', e);
+        }
+        
+        try { 
+          window.dispatchEvent(new Event('authChange'));
+          console.log('Auth change event dispatched');
+        } catch (e) { 
+          console.error('Failed to dispatch auth change:', e);
+        }
+        
         // Use window.location to ensure full page reload with new auth state
-        window.location.href = "/";
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 100);
         return;
+      } else {
+        setError("Invalid response from server. Please try again.");
       }
     } catch (err) {
-      console.error(err)
-      // If server returned 401, show a clearer message
-      if (err?.response?.status === 401) {
+      console.error('Login error:', err)
+      
+      // Handle different types of errors
+      if (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')) {
+        setError("Request timeout. Please check your connection and try again.");
+      } else if (err?.code === 'ERR_NETWORK' || err?.message?.includes('Network Error')) {
+        setError("Network error. Please check if the server is running and try again.");
+      } else if (err?.response?.status === 401) {
+        setError("Invalid email or password");
+      } else if (err?.response?.status === 404) {
         setError("User not found");
+      } else if (err?.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err?.message) {
+        setError(err.message);
       } else {
-        setError(err?.response?.data?.message || err?.message || "Login failed");
+        setError("Login failed. Please try again.");
       }
     } finally {
       setLoading(false)
