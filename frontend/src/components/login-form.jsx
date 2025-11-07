@@ -14,12 +14,9 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { post as apiPost } from "@/lib/api"
-import { useToast } from "@/components/Toast"
-import { getErrorMessage } from "@/lib/errorHandler"
 
 export function LoginForm({ className, ...props }) {
   const router = useRouter()
-  const toast = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -29,18 +26,11 @@ export function LoginForm({ className, ...props }) {
     e.preventDefault()
     setError("")
     setLoading(true)
-    
     try {
       const payload = { email, password }
       const res = await apiPost("/auth/login", payload)
-      
       if (res?.token) {
-        try { 
-          localStorage.setItem("authToken", res.token); 
-        } catch (e) { 
-          console.error('Failed to store auth token:', e);
-        }
-        
+        try { localStorage.setItem("authToken", res.token); } catch (e) { /* ignore */ }
         // persist user info ensuring sic_no, name, email are always present
         try {
           const serverUser = res?.user || res?.profile || (res?.data && res.data.user) || {};
@@ -55,30 +45,20 @@ export function LoginForm({ className, ...props }) {
           if (user.sic_no) localStorage.setItem("sic_no", user.sic_no);
           localStorage.setItem("name", user.name);
           localStorage.setItem("email", user.email);
-        } catch (e) { 
-          console.error('Failed to store user data:', e);
-        }
-        
-        try { 
-          window.dispatchEvent(new Event('authChange')); 
-        } catch (e) { 
-          console.error('Failed to dispatch auth change:', e);
-        }
-        
-        // Show success message
-        toast.success("Login successful! Redirecting...");
-        
+        } catch (e) { /* ignore */ }
+        try { window.dispatchEvent(new Event('authChange')); } catch (e) { /* ignore */ }
         // Use window.location to ensure full page reload with new auth state
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 500);
+        window.location.href = "/";
         return;
       }
     } catch (err) {
-      console.error('Login error:', err);
-      const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
-      toast.error(errorMessage);
+      console.error(err)
+      // If server returned 401, show a clearer message
+      if (err?.response?.status === 401) {
+        setError("User not found");
+      } else {
+        setError(err?.response?.data?.message || err?.message || "Login failed");
+      }
     } finally {
       setLoading(false)
     }
@@ -104,14 +84,18 @@ export function LoginForm({ className, ...props }) {
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <a href="#" className="ml-auto text-sm underline-offset-2 hover:underline">
+                    Forgot your password?
+                  </a>
                 </div>
                 <Input id="password" type="password" required value={password} onChange={(e)=>setPassword(e.target.value)} />
               </Field>
-              <Field>
-                <Button type="submit" disabled={loading}>{loading ? 'Signing in...' : 'Login'}</Button>
-              </Field>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Logging in..." : "Login"}
+              </Button>
               <FieldDescription className="text-center">
-                Don&apos;t have an account? <a href="/register">Sign up</a>
+                Don&apos;t have an account?{" "}
+                <a href="/register">Sign up</a>
               </FieldDescription>
             </FieldGroup>
           </form>

@@ -15,10 +15,9 @@ const demoEvent = {
   organiserContact: "Codigo Plataforma\nEmail: siliconcodingclub@gmail.com\nPhone: +91 6370 577 859",
   location: "Seminar Hall and Lab 3 & 4",
     stages: [
-    { id: 1, title: "Registration", start: "Nov 7", end: "Nov 10", time: "All day", description: "Open registrations for teams." },
-    { id: 2, title: "Case Study Release", start: "Nov 11", end: "Nov 12", time: "10:00 PM - 10:00 PM", description: "Participants will receive the case study and have 24 hours to conduct research and submit their Research." },
+    { id: 1, title: "Registration", start: "Nov 8", end: "Nov 11", time: "All day", description: "Open registrations for teams containing 3 members." },
+    { id: 2, title: "Case Study Release", start: "Nov 12", end: "Nov 13", time: "12:00 AM (Release)", description: "Participants will receive the case study and have 24 hours to conduct research and submit their Research." },
     { id: 3, title: "Finals & Demos", start: "Nov 13", end: "Nov 13", time: "9:00 AM - 4:30 PM", description: "Final presentations, demos and judging taking place on-site." },
-    { id: 4, title: "Winner Announcement", start: "Nov 14", end: "Nov 14", time: "12:00 PM", description: "Winners will be announced." },
   ],
   prizes: [
     { id: 1, title: "1st Prize", amount: "1,500", description: "Grand prize for the winning team." },
@@ -101,17 +100,10 @@ export default function Page() {
   // Check if current time is past the unlock time
   useEffect(() => {
     const unlockTimeStr = process.env.NEXT_PUBLIC_CASE_STUDY_UNLOCK_TIME;
-    console.log('[Case Study] Unlock time from env:', unlockTimeStr);
-    
     const unlockTime = new Date(unlockTimeStr).getTime();
-    console.log('[Case Study] Unlock timestamp:', unlockTime, 'Date:', new Date(unlockTime).toString());
-    
     const checkUnlockStatus = () => {
       const now = new Date().getTime();
-      const isUnlocked = now >= unlockTime;
-      console.log('[Case Study] Current time:', now, 'Date:', new Date(now).toString());
-      console.log('[Case Study] Is unlocked?', isUnlocked, '(now >= unlock)');
-      setIsCaseStudyUnlocked(isUnlocked);
+      setIsCaseStudyUnlocked(now >= unlockTime);
     };
     
     checkUnlockStatus();
@@ -245,7 +237,7 @@ export default function Page() {
       try {
         const res = await get(`/teams/member/${encodeURIComponent(String(sic))}`);
   const data = res?.data || res;
-  const team = Array.isArray(data) ? data[0] : (data?.team || data?.teams?.[0] || data);
+  const team =data?.team;
         if (mounted) {
           setTeamInfo(team || null);
           // If a team object exists, treat the user as already registered for the event
@@ -396,24 +388,15 @@ export default function Page() {
     let mounted = true;
     function checkRegistrationTime() {
       const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
       
-      // Get registration close time from env (ISO 8601 format or HH:MM for backward compatibility)
-      const closeTimeStr = process.env.NEXT_PUBLIC_REGISTRATION_CLOSE_TIME || "2025-11-11T23:00:00";
+      // Get registration close time from env (default: 22:35)
+      const closeTime = process.env.NEXT_PUBLIC_REGISTRATION_CLOSE_TIME || "22:35";
+      const [closeHour, closeMinute] = closeTime.split(':').map(Number);
       
-      // Check if it's ISO 8601 format (contains 'T') or just time (HH:MM)
-      let isClosed;
-      if (closeTimeStr.includes('T')) {
-        // ISO 8601 format: compare full date-time
-        const closeTime = new Date(closeTimeStr).getTime();
-        isClosed = now.getTime() >= closeTime;
-      } else {
-        // Legacy HH:MM format: compare only time
-        const h = now.getHours();
-        const m = now.getMinutes();
-        const [closeHour, closeMinute] = closeTimeStr.split(':').map(Number);
-        isClosed = (h > closeHour) || (h === closeHour && m >= closeMinute);
-      }
-      
+      // Check if current time is past the closing time
+      const isClosed = (h > closeHour) || (h === closeHour && m >= closeMinute);
       if (mounted) setIsRegistrationClosed(isClosed);
     }
     checkRegistrationTime();
@@ -637,14 +620,13 @@ export default function Page() {
                               Register for Case Study
                             </button>
                           )}
-                          <a
-                            href={process.env.NEXT_PUBLIC_UPLOAD_RESEARCH_LINK || "https://forms.google.com/your-upload-form"}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => alert('Upload research functionality coming soon!')}
                             className="inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-md text-xs sm:text-sm hover:bg-blue-700 transition"
                           >
                             Upload Research
-                          </a>
+                          </button>
                         </>
                       )}
                     </div>

@@ -99,7 +99,7 @@ function Hero() {
             variants={slideUp}
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
           >
-            Join Codigo Plataforma, a student-led coding club where innovation meets collaboration. Work on real projects, attend workshops, and grow with a community of passionate developers.
+            Join Codigo, a student-led coding club where innovation meets collaboration. Work on real projects, attend workshops, and grow with a community of passionate developers.
           </motion.p>
           <motion.div
             className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4"
@@ -131,7 +131,7 @@ function Hero() {
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
         >
-          <img src="/hero.svg" alt="Coding illustration" className="w-full h-auto hidden sm:block" />
+          <img src="/hero.svg" alt="Coding illustration" className="w-full h-auto" />
         </motion.div>
       </motion.div>
 

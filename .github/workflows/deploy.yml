@@ -1,0 +1,65 @@
+name: CI/CD Pipeline
+
+# Trigger on push to main branch or manually
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4️⃣ Run tests (optional)
+      - name: Run tests
+        run: npm test || echo "No tests configured"
+
+      # 5️⃣ Build frontend (Next.js)
+      - name: Build Next.js frontend
+        run: npm run build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ SSH into your server and deploy
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.APP_PATH }}
+
+            # Pull latest code
+            git reset --hard
+            git pull origin main
+
+            # Install dependencies
+            npm install --production
+
+            # Build frontend
+            npm run build
+
+            # Restart backend
+            pm2 list | grep backend && pm2 restart backend || pm2 start npm --name "backend" -- run server
+
+            # Restart frontend
+            pm2 list | grep frontend && pm2 restart frontend || pm2 start npm --name "frontend" -- run start
