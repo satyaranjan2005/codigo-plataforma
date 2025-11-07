@@ -6,7 +6,7 @@ function Events() {
       month: "NOV",
       year: "2025",
       title: "Design Mania",
-      description: "Design Mania 2025 presented by Codigo Plataforma is a team(Maximum of 3 members) UI/UX design competition where participants will demonstrate their research, creativity, and design skills. Participants will receive a case study, and they will have 24 hours to conduct research. Once research is submitted, participants will then design according to the case study.",
+      description: "Design Mania 2025 presented by Codigo Plataforma is a team(consisting of 3 members) UI/UX design competition where participants will demonstrate their research, creativity, and design skills. Participants will receive a case study, and they will have 24 hours to conduct research. Once research is submitted, participants will then design according to the case study.",
       category: "Competition",
       time: "9:00 AM - 4:30 PM",
       location: "Seminar Hall and Lab 3,4"

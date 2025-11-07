@@ -10,7 +10,7 @@ const demoEvent = {
   banner: "eventBanner.png",
   logo: "eventLogo.png",
   about:
-    "Design Mania 2024 presented by Codigo Plataforma is an individual UI/UX design competition where participants will demonstrate their research, creativity, and design skills. Participants will receive a case study, and they will have 24 hours to conduct research. Once research is submitted, participants will then design according to the case study.",
+    "Design Mania 2025 presented by Codigo Plataforma is a team (consisting of 3 members) UI/UX design competition where participants will demonstrate their research, creativity, and design skills. Participants will receive a case study, and they will have 24 hours to conduct research. Once research is submitted, participants will then design according to the case study.",
   importantDate: "2025-11-13",
   organiserContact:
     "Codigo Plataforma\nEmail: siliconcodingclub@gmail.com\nPhone: +91 6370 577 859",
@@ -20,16 +20,16 @@ const demoEvent = {
       id: 1,
       title: "Registration",
       start: "Nov 8",
-      end: "Nov 11",
+      end: "Nov 10",
       time: "All day",
       description: "Open registrations for teams containing 3 members.",
     },
     {
       id: 2,
       title: "Case Study Release",
-      start: "Nov 12",
-      end: "Nov 13",
-      time: "12:00 AM (Release)",
+      start: "Nov 11",
+      end: "Nov 12",
+      time: "10:00 PM (Release)",
       description:
         "Participants will receive the case study and have 24 hours to conduct research and submit their Research.",
     },
@@ -41,6 +41,15 @@ const demoEvent = {
       time: "9:00 AM - 4:30 PM",
       description:
         "Final presentations, demos and judging taking place on-site.",
+    },
+    {
+      id: 4,
+      title: "Winner Announcement",
+      start: "Nov 14",
+      end: "Nov 14",
+      time: "12:00 PM",
+      description:
+        "Winners will be announced.",
     },
   ],
   prizes: [

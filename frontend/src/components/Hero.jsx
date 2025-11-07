@@ -127,7 +127,7 @@ function Hero() {
 
         {/* Illustration (slower float) */}
         <motion.div
-          className="absolute bottom-0 right-0 w-[200px] sm:w-[280px] md:w-[360px] lg:w-[420px] opacity-90"
+          className="absolute bottom-0 right-0 w-[200px] sm:w-[280px] md:w-[360px] lg:w-[420px] opacity-90 hidden sm:block"
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
         >
