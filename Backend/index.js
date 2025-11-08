@@ -11,6 +11,7 @@ const teamRouter = require('./routes/Team');
 const problemRouter = require('./routes/casestudy');
 const adminRouter = require('./routes/Admin');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { scheduleCaseStudyReleaseEmails } = require('./utils/emailScheduler');
 
 const prisma = new PrismaClient();
 
@@ -66,4 +67,7 @@ process.on('SIGTERM', () => {
 app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Start the case study release email scheduler
+    scheduleCaseStudyReleaseEmails();
 });

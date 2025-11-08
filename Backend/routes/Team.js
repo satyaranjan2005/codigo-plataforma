@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { authenticate } = require('./_auth_middleware');
+const { sendTeamCreationEmail } = require('../utils/resend');
 
 // Create a team and add members
 // POST /teams
@@ -53,6 +54,32 @@ router.post('/', authenticate, async (req, res, next) => {
 
       const teamMembers = await Promise.all(memberCreates);
       return { team, teamMembers };
+    });
+
+    // Fetch full student details for email
+    const membersWithDetails = await prisma.student.findMany({
+      where: { sic_no: { in: uniqueMembers } },
+      select: { sic_no: true, name: true, email: true }
+    });
+
+    // Send team creation emails to all members
+    const emailData = {
+      teamId: result.team.id,
+      teamName: result.team.team_name,
+      members: membersWithDetails.map(student => {
+        const teamMember = result.teamMembers.find(tm => tm.sic_no === student.sic_no);
+        return {
+          sic_no: student.sic_no,
+          name: student.name,
+          email: student.email,
+          role: teamMember?.role || 'MEMBER'
+        };
+      })
+    };
+
+    // Send emails asynchronously (don't block response)
+    sendTeamCreationEmail(emailData, requester).catch(err => {
+      console.error('Failed to send team creation emails:', err);
     });
 
     return res.status(201).json({ message: 'Team created', ...result });

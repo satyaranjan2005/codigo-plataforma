@@ -2,6 +2,7 @@ const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { sendRolePromotionEmail } = require('../utils/resend');
 
 // Middleware: authenticate JWT and attach user to req.authUser
 function authenticate(req, res, next) {
@@ -210,6 +211,18 @@ router.patch('/:sic_no/role', authenticate, async (req, res, next) => {
       return res.status(403).json({ error: 'Forbidden: ADMIN cannot assign SUPERADMIN' });
     }
 
+    // Fetch current user data to get old role
+    const currentUser = await prisma.student.findUnique({
+      where: { sic_no: targetSic },
+      select: { sic_no: true, name: true, email: true, role: true }
+    });
+
+    if (!currentUser) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const oldRole = currentUser.role;
+
     // Update the student's role
     const updated = await prisma.student.update({
       where: { sic_no: targetSic },
@@ -221,6 +234,19 @@ router.patch('/:sic_no/role', authenticate, async (req, res, next) => {
     });
 
     if (!updated) return res.status(404).json({ error: 'Student not found' });
+
+    // Send promotion email if promoted to ADMIN or SUPERADMIN
+    if ((newRole === 'ADMIN' || newRole === 'SUPERADMIN') && oldRole !== newRole) {
+      sendRolePromotionEmail({
+        sic_no: updated.sic_no,
+        name: updated.name,
+        email: updated.email,
+        newRole: newRole,
+        oldRole: oldRole
+      }).catch(err => {
+        console.error('Failed to send role promotion email:', err);
+      });
+    }
 
     return res.json({ message: 'Role updated', user: updated });
   } catch (err) {
