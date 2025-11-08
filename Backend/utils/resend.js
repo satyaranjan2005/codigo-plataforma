@@ -871,7 +871,7 @@ async function sendRolePromotionEmail(userData) {
         align-items: center;
       }
       .permissions-list li:before {
-        content: "\2713";
+        content: "✓";
         margin-right: 10px;
         font-size: 14px;
         color: var(--orange-600);
