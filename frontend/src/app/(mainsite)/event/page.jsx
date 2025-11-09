@@ -67,9 +67,9 @@ const demoEvent = {
     },
     {
       id: 3,
-      title: "Best UX",
+      title: "3rd Prize",
       amount: "500",
-      description: "Award for the best user experience.",
+      description: "Award for the third-place team.",
     },
   ],
 };
@@ -141,6 +141,21 @@ export default function Page() {
   const [isTeamLeader, setIsTeamLeader] = useState(false);
   const [debugEnabled, setDebugEnabled] = useState(false);
   const [debugLastSaved, setDebugLastSaved] = useState(null);
+
+  // Helper: fetch team details for a given SIC from the server (defensive utility)
+  async function fetchTeamBySIC(sic) {
+    if (!sic) return null;
+    try {
+      const res = await get(`/teams/member/${encodeURIComponent(String(sic))}`);
+      // API returns team object directly: { id, team_name, problemStatement, members: [...] }
+      const team = res?.data || res;
+      console.log('fetchTeamBySIC result:', team);
+      return team || null;
+    } catch (err) {
+      console.warn('fetchTeamBySIC failed:', err);
+      return null;
+    }
+  }
 
   // Case study unlock time from environment variable
   const [isCaseStudyUnlocked, setIsCaseStudyUnlocked] = useState(false);
@@ -259,8 +274,64 @@ export default function Page() {
     };
   }, []);
 
+  // On mount: defensive check using localStorage authUser to fetch team and set UI flags
+  useEffect(() => {
+    (async () => {
+      try {
+        if (typeof window === "undefined") return;
+        const raw = localStorage.getItem("authUser");
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed) return;
+        const sic = parsed.sic || parsed.sic_no || parsed.sicNo || parsed.id || parsed.email;
+        if (!sic) return;
+        const team = await fetchTeamBySIC(sic);
+        if (!team) return;
+        setTeamInfo(team || null);
+        const hasTeam = Boolean(
+          team && (team.id || team._id || team.team_id || team.teamId || (Array.isArray(team.members) && team.members.length > 0))
+        );
+        setAlreadyEventRegistered(hasTeam);
+        const registeredForCaseStudy = Boolean(
+          team && (team.problem_id || team.problemId || team.problem || team.problemStatement || team.registered || team.registered_for_case_study)
+        );
+        setAlreadyRegistered(registeredForCaseStudy);
+
+        // Leader detection: check if current user has role "LEADER" in members array
+        try {
+          const userIds = new Set();
+          if (parsed?.id) userIds.add(String(parsed.id));
+          if (parsed?.sic) userIds.add(String(parsed.sic));
+          if (parsed?.sic_no) userIds.add(String(parsed.sic_no));
+          if (parsed?.email) userIds.add(String(parsed.email));
+
+          let leaderFound = false;
+          
+          // Check members array for LEADER role
+          if (Array.isArray(team.members)) {
+            const leaderMember = team.members.find(m => m.role === 'LEADER');
+            if (leaderMember) {
+              const leaderSic = leaderMember.sic_no || leaderMember.sic || leaderMember.id;
+              if (leaderSic && userIds.has(String(leaderSic))) {
+                leaderFound = true;
+              }
+            }
+          }
+
+          setIsTeamLeader(Boolean(leaderFound));
+          console.log('[Leader Check] Mount check:', { userIds: Array.from(userIds), isLeader: leaderFound });
+        } catch (e) {
+          console.warn('Leader detect failed:', e);
+          setIsTeamLeader(false);
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
+
   // When authUser changes, try to lookup their team by SIC number and check registration
   useEffect(() => {
+    console.log(alreadyEventRegistered, 'alreadyEventRegistered');
     let mounted = true;
     async function loadTeamForUser(u) {
       if (!u) {
@@ -325,19 +396,17 @@ export default function Page() {
         const res = await get(
           `/teams/member/${encodeURIComponent(String(sic))}`
         );
-        const data = res?.data || res;
-        const team = data?.team;
+        // API returns team object directly: { id, team_name, problemStatement, members: [...] }
+        const team = res?.data || res;
+        console.log('[Auth Effect] Team fetched for user:', team);
         if (mounted) {
           setTeamInfo(team || null);
           // If a team object exists, treat the user as already registered for the event
           const hasTeam = Boolean(
             team &&
-              (team.id ||
-                team._id ||
-                team.team_id ||
-                team.teamId ||
-                (Array.isArray(team.members) && team.members.length > 0))
+              (team.id || (Array.isArray(team.members) && team.members.length > 0))
           );
+          console.log('[Auth Effect] hasTeam check:', hasTeam);
           setAlreadyEventRegistered(hasTeam);
           // Separately track whether the team is registered for the case-study (existing logic)
           const registeredForCaseStudy = Boolean(
@@ -375,8 +444,8 @@ export default function Page() {
               console.warn("[Leader Check] Error reading localStorage:", e);
             }
 
-            // If not found in localStorage, check API response
-            if (!leaderFound && team) {
+            // If not found in localStorage, check API response members array
+            if (!leaderFound && team && Array.isArray(team.members)) {
               const userIds = new Set();
               if (u?.id) userIds.add(String(u.id));
               if (u?.sic) userIds.add(String(u.sic));
@@ -384,32 +453,18 @@ export default function Page() {
               if (u?.sicNo) userIds.add(String(u.sicNo));
               if (u?.email) userIds.add(String(u.email));
 
-              const leaderIds = new Set();
-              if (team.leader_sic) leaderIds.add(String(team.leader_sic));
-              if (team.leader_sic_no) leaderIds.add(String(team.leader_sic_no));
-              if (team.leader_id) leaderIds.add(String(team.leader_id));
-              if (team.team_leader) leaderIds.add(String(team.team_leader));
-              if (team.created_by) leaderIds.add(String(team.created_by));
-
-              if (team.leader && typeof team.leader === "object") {
-                if (team.leader.sic) leaderIds.add(String(team.leader.sic));
-                if (team.leader.sic_no)
-                  leaderIds.add(String(team.leader.sic_no));
-                if (team.leader.id) leaderIds.add(String(team.leader.id));
-              } else if (team.leader) {
-                leaderIds.add(String(team.leader));
-              }
-
-              for (const userId of userIds) {
-                if (leaderIds.has(userId)) {
+              // Find member with LEADER role
+              const leaderMember = team.members.find(m => m.role === 'LEADER');
+              if (leaderMember) {
+                const leaderSic = leaderMember.sic_no || leaderMember.sic || leaderMember.id;
+                if (leaderSic && userIds.has(String(leaderSic))) {
                   leaderFound = true;
-                  break;
                 }
               }
 
               console.log("[Leader Check] API check:", {
                 userIds: Array.from(userIds),
-                leaderIds: Array.from(leaderIds),
+                leaderMember: leaderMember?.sic_no,
                 isLeader: leaderFound,
               });
             }
@@ -759,10 +814,16 @@ export default function Page() {
                     <div className="w-full px-3 py-2 bg-red-100 text-red-700 rounded-md text-center text-xs sm:text-sm font-medium">
                       Registration Closed
                     </div>
-                  ) : alreadyEventRegistered ? (
-                    <div className="w-full px-3 py-2 bg-slate-100 text-slate-700 rounded-md text-center text-xs sm:text-sm">
+                  ) : (alreadyEventRegistered || Boolean(teamInfo)) ? (
+                    <button
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      title="You have already registered for this event"
+                      className="w-full px-3 py-2 bg-slate-100 text-slate-500 rounded-md text-sm sm:text-base cursor-not-allowed"
+                    >
                       Already registered
-                    </div>
+                    </button>
                   ) : (
                     <button
                       onClick={() => {
@@ -775,10 +836,6 @@ export default function Page() {
                           router.push("/login");
                           return;
                         }
-                        setPendingReg({
-                          name: authUser?.name ?? "Demo User",
-                          email: authUser?.email ?? "demo.user@example.com",
-                        });
                         setShowRules(true);
                       }}
                       className="w-full px-3 py-2 bg-indigo-600 text-white rounded-md text-sm sm:text-base hover:bg-indigo-700 transition"
@@ -789,10 +846,6 @@ export default function Page() {
                 </div>
                 <div className="mt-3 text-xs sm:text-sm text-slate-700 space-y-1">
                   <div>
-                    Total registered:{" "}
-                    <span className="font-semibold">{regCount}</span>
-                  </div>
-                  <div>
                     Team size:{" "}
                     <span className="font-semibold">
                       {teamSize ? `${teamSize}` : "3"}
@@ -802,7 +855,7 @@ export default function Page() {
               </div>
 
               {/* WhatsApp Group - Always visible to registered members */}
-              {alreadyEventRegistered && (
+              {(alreadyEventRegistered || Boolean(teamInfo)) && (
                 <div className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
                   <h4 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">
                     Important Links
@@ -824,7 +877,7 @@ export default function Page() {
               )}
 
               {/* Case Study Links - Only visible after unlock time */}
-              {alreadyEventRegistered && isCaseStudyUnlocked && (
+              {(alreadyEventRegistered || Boolean(teamInfo)) && isCaseStudyUnlocked && (
                 <div className="bg-white border rounded-lg p-3 sm:p-4 shadow-sm">
                   <h4 className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">
                     Case Study

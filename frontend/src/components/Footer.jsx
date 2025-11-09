@@ -36,7 +36,7 @@ export default function Footer() {
           <div className="flex flex-col items-center sm:items-start">
             <h4 className="text-sm font-semibold text-slate-900 mb-3">Current Event</h4>
             <div className="flex flex-col gap-2 text-sm text-slate-600">
-              <div>Design Mania 2024</div>
+              <div>Design Mania 2025</div>
               <div>Nov 8-14, 2025</div>
               <div>Location: Seminar Hall</div>
               <Link href="/event" className="text-indigo-600 hover:text-indigo-700 transition-colors">

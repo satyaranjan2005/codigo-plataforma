@@ -17,9 +17,14 @@ async function main() {
   const argv = minimist(process.argv.slice(2));
   const apply = Boolean(argv.yes || argv.y);
 
-const students = [
+  const students = [
     { sic_no: '23bcsn72', name: 'Satya Ranjan Nayak', email: 'satyaranjannayak2005@gmail.com', phone_no: '6370577859', password: 'satya@satya', role: 'SUPERADMIN', year: 'THIRD' },
-];
+    { sic_no: '23bcsn73', name: 'Asha Kumar', email: 'asha.kumar@example.com', phone_no: '9876543210', password: 'password123', role: 'MEMBER', year: 'SECOND' },
+    { sic_no: '23bcsn74', name: 'Rohit Singh', email: 'rohit.singh@example.com', phone_no: '9123456780', password: 'rohit@2025', role: 'MEMBER', year: 'FIRST' },
+    { sic_no: '23bcsn75', name: 'Neha Patel', email: 'neha.patel@example.com', phone_no: '9012345678', password: 'nehaPass!', role: 'MEMBER', year: 'SECOND' },
+    { sic_no: '23bcsn76', name: 'Vikram Rao', email: 'vikram.rao@example.com', phone_no: '9988776655', password: 'vikram123', role: 'ADMIN', year: 'THIRD' },
+    { sic_no: '23bcsn77', name: 'Priya Menon', email: 'priya.menon@example.com', phone_no: '9001122334', password: 'priya@secure', role: 'MEMBER', year: 'FIRST' },
+  ];
 
   const problems = [
   ];

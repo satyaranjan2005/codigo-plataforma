@@ -11,7 +11,6 @@ const CASE_STUDY_RELEASE_CONFIG = {
   // Set your desired date and time here (in ISO 8601 format or JavaScript Date)
   // Example: new Date('2025-01-15T10:00:00') for January 15, 2025 at 10:00 AM
   releaseDateTime: new Date('2025-11-11T22:00:00'), // November 11, 2025 at 10:00 PM
-  
   // Timezone offset in hours (e.g., +5.5 for IST, -5 for EST)
   timezoneOffset: 0, // CHANGE THIS IF NEEDED (0 for UTC)
   
@@ -89,15 +88,43 @@ async function sendCaseStudyReleaseEmails() {
     }
 
     console.log(`Sending emails to ${totalMembers} team member(s)...`);
+    console.log('Rate limit: 2 emails per second');
 
-    // Send all emails in parallel
-    const results = await Promise.allSettled(emailPromises);
-    const fulfilled = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
-    const rejected = results.filter((r) => r.status === "rejected");
+    // Send emails with rate limiting: 2 emails per second
+    const EMAILS_PER_SECOND = 2;
+    const BATCH_SIZE = EMAILS_PER_SECOND;
+    const DELAY_MS = 1000; // 1 second delay between batches
 
-    const successCount = fulfilled.filter(r => r.ok).length;
-    const skippedCount = fulfilled.filter(r => r.skipped).length;
-    const failedCount = fulfilled.filter(r => !r.ok && !r.skipped).length + rejected.length;
+    let successCount = 0;
+    let skippedCount = 0;
+    let failedCount = 0;
+
+    // Process emails in batches
+    for (let i = 0; i < emailPromises.length; i += BATCH_SIZE) {
+      const batch = emailPromises.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(emailPromises.length / BATCH_SIZE);
+
+      console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} emails)...`);
+
+      // Send batch in parallel
+      const batchResults = await Promise.allSettled(batch);
+      const batchFulfilled = batchResults.filter((r) => r.status === "fulfilled").map((r) => r.value);
+      const batchRejected = batchResults.filter((r) => r.status === "rejected");
+
+      // Count results
+      successCount += batchFulfilled.filter(r => r.ok).length;
+      skippedCount += batchFulfilled.filter(r => r.skipped).length;
+      failedCount += batchFulfilled.filter(r => !r.ok && !r.skipped).length + batchRejected.length;
+
+      console.log(`Batch ${batchNumber} complete: ${batchFulfilled.filter(r => r.ok).length} sent, ${batchFulfilled.filter(r => r.skipped).length} skipped, ${batchFulfilled.filter(r => !r.ok && !r.skipped).length + batchRejected.length} failed`);
+
+      // Wait before processing next batch (except for the last batch)
+      if (i + BATCH_SIZE < emailPromises.length) {
+        console.log(`Waiting ${DELAY_MS}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+      }
+    }
 
     console.log('========================================');
     console.log('Email Campaign Results:');
@@ -107,17 +134,12 @@ async function sendCaseStudyReleaseEmails() {
     console.log(`📊 Total: ${totalMembers}`);
     console.log('========================================');
 
-    if (rejected.length > 0) {
-      console.error('Rejected promises:', rejected);
-    }
-
     return {
       ok: successCount > 0,
       sent: successCount,
       skipped: skippedCount,
       failed: failedCount,
       total: totalMembers,
-      results: fulfilled,
     };
   } catch (err) {
     console.error('Error in sendCaseStudyReleaseEmails:', err);
