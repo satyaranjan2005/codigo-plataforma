@@ -579,16 +579,21 @@ export default function Page() {
     let mounted = true;
     function checkRegistrationTime() {
       const now = new Date();
-      const h = now.getHours();
-      const m = now.getMinutes();
+      
+      // Get registration close time from env (ISO 8601 format: YYYY-MM-DDTHH:mm:ss)
+      const closeTimeStr = process.env.NEXT_PUBLIC_REGISTRATION_CLOSE_TIME;
+      
+      if (!closeTimeStr) {
+        // If no close time is set, registration is always open
+        if (mounted) setIsRegistrationClosed(false);
+        return;
+      }
 
-      // Get registration close time from env (default: 22:35)
-      const closeTime =
-        process.env.NEXT_PUBLIC_REGISTRATION_CLOSE_TIME || "22:35";
-      const [closeHour, closeMinute] = closeTime.split(":").map(Number);
-
+      // Parse the ISO datetime string
+      const closeTime = new Date(closeTimeStr);
+      
       // Check if current time is past the closing time
-      const isClosed = h > closeHour || (h === closeHour && m >= closeMinute);
+      const isClosed = now >= closeTime;
       if (mounted) setIsRegistrationClosed(isClosed);
     }
     checkRegistrationTime();
