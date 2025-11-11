@@ -9,7 +9,8 @@
     "db:set-superadmin": "node scripts/setSuperadmin.js --yes",
     "db:unassign-all": "node scripts/nullifyAllProblems.js --yes",
     "db:clear-all": "node scripts/clearAll.js --yes",
-    "db:seed": "node scripts/seed.js --yes"
+    "db:seed": "node scripts/seed.js --yes",
+    "db:update-password": "node scripts/updatePassword.js"
   },
   "author": "",
   "license": "ISC",
