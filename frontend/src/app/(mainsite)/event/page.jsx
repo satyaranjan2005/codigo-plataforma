@@ -913,15 +913,17 @@ export default function Page() {
                             Register for Case Study
                           </button>
                         )}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            alert("Upload research functionality coming soon!")
+                        <a
+                          href={
+                            process.env.NEXT_PUBLIC_RESEARCH_UPLOAD_LINK ||
+                            "https://forms.gle/your-form-id-here"
                           }
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-md text-xs sm:text-sm hover:bg-blue-700 transition"
                         >
                           Upload Research
-                        </button>
+                        </a>
                       </>
                     )}
                   </div>
