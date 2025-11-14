@@ -4,10 +4,12 @@ import { get } from "@/lib/api";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Events from "@/components/Events";
+import Winner from "@/components/Winner";
 
 function Home(){
   const [authUser, setAuthUser] = useState(null);
   const [validating, setValidating] = useState(false);
+  const [isWinnersUnlocked, setIsWinnersUnlocked] = useState(false);
 
   // Check if user exists on mount
   useEffect(() => {
@@ -99,11 +101,71 @@ function Home(){
     };
   }, [validating]);
 
+  // Check winners unlock time (visible to everyone after unlock)
+  useEffect(() => {
+    function checkWinnersUnlock() {
+      try {
+        const unlockStr = process.env.NEXT_PUBLIC_WINNERS_UNLOCK_TIME;
+        if (!unlockStr) {
+          // if not set, keep unlocked = false
+          setIsWinnersUnlocked(false);
+          return;
+        }
+        const unlockTime = new Date(unlockStr);
+        if (isNaN(unlockTime.getTime())) {
+          setIsWinnersUnlocked(false);
+          return;
+        }
+        const now = new Date();
+        setIsWinnersUnlocked(now >= unlockTime);
+      } catch (e) {
+        console.warn('Failed to parse NEXT_PUBLIC_WINNERS_UNLOCK_TIME', e);
+        setIsWinnersUnlocked(false);
+      }
+    }
+
+    checkWinnersUnlock();
+    const t = setInterval(checkWinnersUnlock, 60 * 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Auto-scroll to winners section when unlocked and page is opened
+  useEffect(() => {
+    try {
+      if (!isWinnersUnlocked) return;
+      // Wait briefly for layout to settle
+      const id = setTimeout(() => {
+        const el = typeof document !== 'undefined' ? document.getElementById('winners-section') : null;
+        if (el && typeof el.scrollIntoView === 'function') {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 250);
+      return () => clearTimeout(id);
+    } catch (e) {
+      // ignore
+    }
+  }, [isWinnersUnlocked]);
+
   return(
     <div className="space-y-8 sm:space-y-10 md:space-y-12 p-4 sm:p-6 md:p-8 lg:p-12">
       <Hero />
       <About />
       <Events />
+
+      {/* Winners section - unlocked based on env NEXT_PUBLIC_WINNERS_UNLOCK_TIME */}
+      <div id="winners-section">
+        {isWinnersUnlocked ? (
+          <Winner />
+        ) : (
+          <section className="bg-white border rounded-lg p-4 sm:p-6 shadow-sm">
+            <h2 className="text-lg sm:text-xl font-semibold">Design Mania — Winners</h2>
+            <p className="text-sm text-slate-600 mt-1">Winners will be announced soon.</p>
+            {process.env.NEXT_PUBLIC_WINNERS_UNLOCK_TIME && (
+              <div className="mt-3 text-xs text-slate-500">Announcement time: {new Date(process.env.NEXT_PUBLIC_WINNERS_UNLOCK_TIME).toLocaleString()}</div>
+            )}
+          </section>
+        )}
+      </div>
     </div>
   );
 }
